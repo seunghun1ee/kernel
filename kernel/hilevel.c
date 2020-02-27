@@ -45,24 +45,40 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 }
 
 void schedule( ctx_t* ctx ) {
-
+  int exec;
+  int max_priority = 0;
+  int next_exec;
   for(int i = 0; i < capn; i++) {
     if(i == executing->pid) {
-      
-      if(i+1 >= capn) {
-        dispatch( ctx, &procTab[ i ], &procTab[ 0 ] );
-        procTab[ i ].status = STATUS_READY;
-        procTab[ 0 ].status = STATUS_EXECUTING;
-        break;
-      }
-      else {
-        dispatch( ctx, &procTab[ i ], &procTab[ i+1 ] );
-        procTab[ i ].status = STATUS_READY;
-        procTab[ i+1 ].status = STATUS_EXECUTING;
-        break;
-      }
+      exec = i;
+      procTab[ i ].priority = procTab[ i ].basePrio;
+    }
+    else {
+      procTab[ i ].priority += 1;
+    }
+
+    if(procTab[ i ].priority > max_priority) {
+      max_priority = procTab[ i ].priority;
+      next_exec = i;
     }
   }
+  dispatch( ctx, &procTab[ exec ], &procTab[ next_exec ] );
+        procTab[ exec ].status = STATUS_READY;
+        procTab[ next_exec ].status = STATUS_EXECUTING;
+
+  /*
+    if(exec+1 >= capn) {
+        dispatch( ctx, &procTab[ exec ], &procTab[ 0 ] );
+        procTab[ exec ].status = STATUS_READY;
+        procTab[ 0 ].status = STATUS_EXECUTING;
+      }
+      else {
+        dispatch( ctx, &procTab[ exec ], &procTab[ exec+1 ] );
+        procTab[ exec ].status = STATUS_READY;
+        procTab[ exec+1 ].status = STATUS_EXECUTING;
+      }
+      */
+  
   /*
   if     ( executing->pid == procTab[ 0 ].pid ) {
     dispatch( ctx, &procTab[ 0 ], &procTab[ 1 ] );  // context switch P_1 -> P_2
@@ -102,23 +118,23 @@ void schedule( ctx_t* ctx ) {
 
 extern void     main_P3();
 extern uint32_t tos_P3;
-uint32_t priority_P3 = 5;
+uint32_t priority_P3 = 3;
 
 extern void     main_P4();
 extern uint32_t tos_P4;
-uint32_t priority_P4 = 4;
+uint32_t priority_P4 = 2;
 
 extern void     main_P1();
 extern uint32_t tos_P1;
-uint32_t priority_P1 = 3;
+uint32_t priority_P1 = 1;
 
 extern void     main_P2();
 extern uint32_t tos_P2;
-uint32_t priority_P2 = 2;
+uint32_t priority_P2 = 0;
 
 extern void     main_P5();
 extern uint32_t tos_P5;
-uint32_t priority_P5 = 1;
+uint32_t priority_P5 = 0;
 
 
 void hilevel_handler_rst(ctx_t* ctx) {
@@ -148,6 +164,7 @@ procTab[ 0 ].ctx.cpsr = 0x50;
 procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
 procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
 procTab[ 0 ].priority = priority_P3;
+procTab[ 0 ].basePrio = priority_P3;
 
 memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_4
 procTab[ 1 ].pid      = 1;
@@ -157,6 +174,7 @@ procTab[ 1 ].ctx.cpsr = 0x50;
 procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
 procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;
 procTab[ 1 ].priority = priority_P4;
+procTab[ 1 ].basePrio = priority_P4;
 
 memset( &procTab[ 2 ], 0, sizeof( pcb_t ) ); // initialise 2-nd PCB = P_1
 procTab[ 2 ].pid      = 2;
@@ -166,6 +184,7 @@ procTab[ 2 ].ctx.cpsr = 0x50;
 procTab[ 2 ].ctx.pc   = ( uint32_t )( &main_P1 );
 procTab[ 2 ].ctx.sp   = procTab[ 2 ].tos;
 procTab[ 2 ].priority = priority_P1;
+procTab[ 2 ].basePrio = priority_P1;
 
 memset( &procTab[ 3 ], 0, sizeof( pcb_t ) ); // initialise 3-rd PCB = P_2
 procTab[ 3 ].pid      = 3;
@@ -175,6 +194,7 @@ procTab[ 3 ].ctx.cpsr = 0x50;
 procTab[ 3 ].ctx.pc   = ( uint32_t )( &main_P2 );
 procTab[ 3 ].ctx.sp   = procTab[ 3 ].tos;
 procTab[ 3 ].priority = priority_P2;
+procTab[ 3 ].basePrio = priority_P2;
 
 memset( &procTab[ 4 ], 0, sizeof( pcb_t ) ); // initialise 4-th PCB = P_5
 procTab[ 4 ].pid      = 4;
@@ -184,6 +204,7 @@ procTab[ 4 ].ctx.cpsr = 0x50;
 procTab[ 4 ].ctx.pc   = ( uint32_t )( &main_P5 );
 procTab[ 4 ].ctx.sp   = procTab[ 4 ].tos;
 procTab[ 4 ].priority = priority_P5;
+procTab[ 4 ].basePrio = priority_P5;
 
 int loadedP = 0;
 for(int i = 0; i < MAX_PROCS; i++ ) {

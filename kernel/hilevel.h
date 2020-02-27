@@ -65,6 +65,7 @@ typedef struct {
   uint32_t    tos; // address of Top of Stack (ToS)
      ctx_t    ctx; // execution context
   uint32_t priority; // Priority of process
+  uint32_t basePrio; // Base Priority of process
 } pcb_t;
 
 
