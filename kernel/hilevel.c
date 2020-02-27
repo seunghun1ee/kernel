@@ -18,6 +18,7 @@
  */
 
 pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
+uint32_t capn = MAX_PROCS;  //capn = current active process number
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -44,18 +45,58 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 }
 
 void schedule( ctx_t* ctx ) {
+
+  for(int i = 0; i < capn; i++) {
+    if(i == executing->pid) {
+      
+      if(i+1 >= capn) {
+        dispatch( ctx, &procTab[ i ], &procTab[ 0 ] );
+        procTab[ i ].status = STATUS_READY;
+        procTab[ 0 ].status = STATUS_EXECUTING;
+        break;
+      }
+      else {
+        dispatch( ctx, &procTab[ i ], &procTab[ i+1 ] );
+        procTab[ i ].status = STATUS_READY;
+        procTab[ i+1 ].status = STATUS_EXECUTING;
+        break;
+      }
+    }
+  }
+  /*
   if     ( executing->pid == procTab[ 0 ].pid ) {
     dispatch( ctx, &procTab[ 0 ], &procTab[ 1 ] );  // context switch P_1 -> P_2
 
     procTab[ 0 ].status = STATUS_READY;             // update   execution status  of P_1
     procTab[ 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
+    procTab[ 2 ].status = STATUS_READY;
+    procTab[ 3 ].status = STATUS_READY;
+  }
+  else if(executing->pid == procTab[ 1 ].pid){
+    dispatch( ctx, &procTab[ 1 ], &procTab[ 2 ] );  // context switch P_2 -> P_1
+
+    procTab[ 0 ].status = STATUS_READY;
+    procTab[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
+    procTab[ 2 ].status = STATUS_EXECUTING;
+    procTab[ 3 ].status = STATUS_READY;         // update   execution status  of P_1
+  }
+  else if(executing->pid == procTab[ 2 ].pid){
+    dispatch( ctx, &procTab[ 2 ], &procTab[ 3 ] );  // context switch P_2 -> P_1
+
+    procTab[ 0 ].status = STATUS_READY;
+    procTab[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
+    procTab[ 2 ].status = STATUS_READY;
+    procTab[ 3 ].status = STATUS_EXECUTING;         
   }
   else {
-    dispatch( ctx, &procTab[ 1 ], &procTab[ 0 ] );  // context switch P_2 -> P_1
+    dispatch( ctx, &procTab[ 3 ], &procTab[ 0 ] );
 
-    procTab[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
-    procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
+    procTab[ 0 ].status = STATUS_EXECUTING;
+    procTab[ 1 ].status = STATUS_READY;
+    procTab[ 2 ].status = STATUS_READY;
+    procTab[ 3 ].status = STATUS_READY;
   }
+  */
   return;
 }
 
@@ -63,7 +104,10 @@ extern void     main_P3();
 extern uint32_t tos_P3;
 extern void     main_P4();
 extern uint32_t tos_P4;
-
+extern void     main_P1();
+extern uint32_t tos_P1;
+extern void     main_P2();
+extern uint32_t tos_P2;
 
 void hilevel_handler_rst(ctx_t* ctx) {
 
@@ -84,21 +128,45 @@ for( int i = 0; i < MAX_PROCS; i++ ) {
  * - the PC and SP values match the entry point and top of stack.
  */
 
-memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = P_1
-procTab[ 0 ].pid      = 1;
+memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = P_3
+procTab[ 0 ].pid      = 0;
 procTab[ 0 ].status   = STATUS_READY;
 procTab[ 0 ].tos      = ( uint32_t )( &tos_P3  );
 procTab[ 0 ].ctx.cpsr = 0x50;
 procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
 procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
 
-memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_2
-procTab[ 1 ].pid      = 2;
+memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_4
+procTab[ 1 ].pid      = 1;
 procTab[ 1 ].status   = STATUS_READY;
 procTab[ 1 ].tos      = ( uint32_t )( &tos_P4  );
 procTab[ 1 ].ctx.cpsr = 0x50;
 procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
 procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;
+
+memset( &procTab[ 2 ], 0, sizeof( pcb_t ) ); // initialise 2-nd" PCB = P_1
+procTab[ 2 ].pid      = 2;
+procTab[ 2 ].status   = STATUS_READY;
+procTab[ 2 ].tos      = ( uint32_t )( &tos_P1  );
+procTab[ 2 ].ctx.cpsr = 0x50;
+procTab[ 2 ].ctx.pc   = ( uint32_t )( &main_P1 );
+procTab[ 2 ].ctx.sp   = procTab[ 2 ].tos;
+
+memset( &procTab[ 3 ], 0, sizeof( pcb_t ) ); // initialise 2-nd" PCB = P_2
+procTab[ 3 ].pid      = 3;
+procTab[ 3 ].status   = STATUS_READY;
+procTab[ 3 ].tos      = ( uint32_t )( &tos_P2  );
+procTab[ 3 ].ctx.cpsr = 0x50;
+procTab[ 3 ].ctx.pc   = ( uint32_t )( &main_P2 );
+procTab[ 3 ].ctx.sp   = procTab[ 3 ].tos;
+
+int loadedP = 0;
+for(int i = 0; i < MAX_PROCS; i++ ) {
+  if(procTab[ i ].status == STATUS_READY) {
+    loadedP += 1;
+  }
+}
+capn = loadedP;
 
 
 /* Once the PCBs are initialised, we arbitrarily select the 0-th PCB to be
