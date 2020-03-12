@@ -21,6 +21,7 @@
 #include   "GIC.h"
 #include "PL011.h"
 #include "SP804.h"
+#include "console.h"
 
 // Include functionality relating to the   kernel.
 

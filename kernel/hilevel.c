@@ -66,53 +66,7 @@ void schedule( ctx_t* ctx ) {
         procTab[ exec ].status = STATUS_READY;
         procTab[ next_exec ].status = STATUS_EXECUTING;
 
-  /*
-    if(exec+1 >= capn) {
-        dispatch( ctx, &procTab[ exec ], &procTab[ 0 ] );
-        procTab[ exec ].status = STATUS_READY;
-        procTab[ 0 ].status = STATUS_EXECUTING;
-      }
-      else {
-        dispatch( ctx, &procTab[ exec ], &procTab[ exec+1 ] );
-        procTab[ exec ].status = STATUS_READY;
-        procTab[ exec+1 ].status = STATUS_EXECUTING;
-      }
-      */
   
-  /*
-  if     ( executing->pid == procTab[ 0 ].pid ) {
-    dispatch( ctx, &procTab[ 0 ], &procTab[ 1 ] );  // context switch P_1 -> P_2
-
-    procTab[ 0 ].status = STATUS_READY;             // update   execution status  of P_1
-    procTab[ 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
-    procTab[ 2 ].status = STATUS_READY;
-    procTab[ 3 ].status = STATUS_READY;
-  }
-  else if(executing->pid == procTab[ 1 ].pid){
-    dispatch( ctx, &procTab[ 1 ], &procTab[ 2 ] );  // context switch P_2 -> P_1
-
-    procTab[ 0 ].status = STATUS_READY;
-    procTab[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
-    procTab[ 2 ].status = STATUS_EXECUTING;
-    procTab[ 3 ].status = STATUS_READY;         // update   execution status  of P_1
-  }
-  else if(executing->pid == procTab[ 2 ].pid){
-    dispatch( ctx, &procTab[ 2 ], &procTab[ 3 ] );  // context switch P_2 -> P_1
-
-    procTab[ 0 ].status = STATUS_READY;
-    procTab[ 1 ].status = STATUS_READY;             // update   execution status  of P_2
-    procTab[ 2 ].status = STATUS_READY;
-    procTab[ 3 ].status = STATUS_EXECUTING;         
-  }
-  else {
-    dispatch( ctx, &procTab[ 3 ], &procTab[ 0 ] );
-
-    procTab[ 0 ].status = STATUS_EXECUTING;
-    procTab[ 1 ].status = STATUS_READY;
-    procTab[ 2 ].status = STATUS_READY;
-    procTab[ 3 ].status = STATUS_READY;
-  }
-  */
   return;
 }
 
@@ -135,6 +89,9 @@ uint32_t priority_P2 = 0;
 extern void     main_P5();
 extern uint32_t tos_P5;
 uint32_t priority_P5 = 0;
+
+extern void     main_console();
+extern uint32_t tos_console;
 
 
 void hilevel_handler_rst(ctx_t* ctx) {
@@ -205,6 +162,16 @@ procTab[ 4 ].ctx.pc   = ( uint32_t )( &main_P5 );
 procTab[ 4 ].ctx.sp   = procTab[ 4 ].tos;
 procTab[ 4 ].priority = priority_P5;
 procTab[ 4 ].basePrio = priority_P5;
+
+memset( &procTab[ 5 ], 0, sizeof( pcb_t ) ); // initialise 5-th PCB = console
+procTab[ 5 ].pid      = 5;
+procTab[ 5 ].status   = STATUS_READY;
+procTab[ 5 ].tos      = ( uint32_t )( &tos_console  );
+procTab[ 5 ].ctx.cpsr = 0x50;
+procTab[ 5 ].ctx.pc   = ( uint32_t )( &main_console );
+procTab[ 5 ].ctx.sp   = procTab[ 5 ].tos;
+procTab[ 5 ].priority = 4;
+procTab[ 5 ].basePrio = 1;
 
 int loadedP = 0;
 for(int i = 0; i < MAX_PROCS; i++ ) {
@@ -294,6 +261,22 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       ctx->gpr[ 0 ] = n;
 
       break;
+    }
+
+    case 0x03 : { //0x03 => fork
+      PL011_putc( UART0, 'F', true );
+    }
+
+    case 0x04 : { //0x04 => exit
+      PL011_putc( UART0, 'E', true );
+    }
+
+    case 0x05 : { //0x05 => exec
+      PL011_putc( UART0, 'X', true );
+    }
+
+    case 0x06 : { //0x06 => kill
+      PL011_putc( UART0, 'K', true );
     }
 
     default   : { // 0x?? => unknown/unsupported
