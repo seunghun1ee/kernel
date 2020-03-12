@@ -122,11 +122,11 @@ uint32_t priority_P3 = 3;
 
 extern void     main_P4();
 extern uint32_t tos_P4;
-uint32_t priority_P4 = 2;
+uint32_t priority_P4 = 1;
 
 extern void     main_P1();
 extern uint32_t tos_P1;
-uint32_t priority_P1 = 1;
+uint32_t priority_P1 = 2;
 
 extern void     main_P2();
 extern uint32_t tos_P2;
