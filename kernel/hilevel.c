@@ -18,6 +18,8 @@
  */
 
 pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
+proc_stack stack[ MAX_PROCS ];
+char* entry_points[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current active process number
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
@@ -44,12 +46,22 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
+int getIndexOfProcTable(pid_t pid) {
+  int result;
+  for( int i = 0; i < MAX_PROCS; i++) {
+    if( pid == procTab[ i ].pid) {
+      result = procTab[ i ].pid;
+    }
+  }
+  return result;
+}
+
 void schedule( ctx_t* ctx ) {
   int exec;
   int max_priority = 0;
   int next_exec;
   for(int i = 0; i < capn; i++) {
-    if(i == executing->pid) {
+    if(i == getIndexOfProcTable(executing->pid)) {
       exec = i;
       procTab[ i ].priority = procTab[ i ].basePrio;
     }
@@ -70,29 +82,93 @@ void schedule( ctx_t* ctx ) {
   return;
 }
 
+
+
 extern void     main_P3();
-extern uint32_t tos_P3;
+//extern uint32_t tos_P3;
 uint32_t priority_P3 = 3;
 
 extern void     main_P4();
-extern uint32_t tos_P4;
+//extern uint32_t tos_P4;
 uint32_t priority_P4 = 1;
 
 extern void     main_P1();
-extern uint32_t tos_P1;
+//extern uint32_t tos_P1;
 uint32_t priority_P1 = 2;
 
 extern void     main_P2();
-extern uint32_t tos_P2;
+//extern uint32_t tos_P2;
 uint32_t priority_P2 = 0;
 
 extern void     main_P5();
-extern uint32_t tos_P5;
+//extern uint32_t tos_P5;
 uint32_t priority_P5 = 0;
 
 extern void     main_console();
 extern uint32_t tos_console;
 
+extern uint32_t tos_proc;
+
+
+
+void initialiseProcTab() {
+  for( int i = 0; i < MAX_PROCS; i++ ) {
+    procTab[ i ].status = STATUS_INVALID;
+    stack[ i ].taken = true;
+    stack[ i ].tos = tos_console + ((i+1) * 0x00001000);
+  }
+  memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = console
+  procTab[ 0 ].pid      = 0;
+  procTab[ 0 ].status   = STATUS_READY;
+  procTab[ 0 ].tos      = ( uint32_t )( &tos_console  );
+  procTab[ 0 ].ctx.cpsr = 0x50;
+  procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
+  procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
+  procTab[ 0 ].priority = 4;
+  procTab[ 0 ].basePrio = 1;
+  /*
+  for( int i = 1; i <= MAX_PROCS; i++ ) {
+    if(stack[ i ].taken) {
+      procTab[ i ].pid     = i;
+      procTab[ i ].status  = STATUS_READY;
+      procTab[ i ].tos     = ( uint32_t )( stack[ i ].tos );
+      procTab[ 0 ].ctx.cpsr = 0x50;
+      procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
+      procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
+      procTab[ 0 ].priority = 4;
+      procTab[ 0 ].basePrio = 1;
+    }
+  
+  }
+  */
+}
+
+void childProcessInit(uint32_t parentPid, uint32_t childPid) {
+
+  procTab[ parentPid ].ctx.gpr[ 0 ] = childPid;
+  memset( &procTab[ childPid ], 0, sizeof( pcb_t ) );
+  procTab[ childPid ].pid      = childPid;
+  procTab[ childPid ].status   = STATUS_READY;
+  procTab[ childPid ].tos      = ( uint32_t )( stack[ childPid ].tos );
+  procTab[ childPid ].ctx.cpsr = 0x50;
+  procTab[ childPid ].ctx.pc   = procTab[ parentPid ].ctx.pc;
+  procTab[ childPid ].ctx.sp   = procTab[ childPid ].tos;
+  procTab[ childPid ].priority = procTab[ parentPid ].priority;
+  procTab[ childPid ].basePrio = procTab[ parentPid ].basePrio;
+  procTab[ childPid ].ctx.gpr[ 0 ] = 0;
+}
+
+void doFork() {
+  uint32_t parentPid = getIndexOfProcTable(executing->pid);
+  uint32_t childPid;
+  for( int i = 0; i < MAX_PROCS; i++) {
+    if( procTab[ i ].status == STATUS_INVALID || procTab[ i ].status == STATUS_TERMINATED) {
+      childPid = i;
+      break;
+    }
+  }
+  childProcessInit(parentPid, childPid);
+}
 
 void hilevel_handler_rst(ctx_t* ctx) {
 
@@ -101,9 +177,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
  * representing valid (i.e., active) processes.
  */
 
-for( int i = 0; i < MAX_PROCS; i++ ) {
-  procTab[ i ].status = STATUS_INVALID;
-}
+
+initialiseProcTab();
 
 /* Automatically execute the user programs P1 and P2 by setting the fields
  * in two associated PCBs.  Note in each case that
@@ -112,7 +187,7 @@ for( int i = 0; i < MAX_PROCS; i++ ) {
  *   with IRQ interrupts enabled, and
  * - the PC and SP values match the entry point and top of stack.
  */
-
+/*
 memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = P_3
 procTab[ 0 ].pid      = 0;
 procTab[ 0 ].status   = STATUS_READY;
@@ -172,6 +247,7 @@ procTab[ 5 ].ctx.pc   = ( uint32_t )( &main_console );
 procTab[ 5 ].ctx.sp   = procTab[ 5 ].tos;
 procTab[ 5 ].priority = 4;
 procTab[ 5 ].basePrio = 1;
+*/
 
 int loadedP = 0;
 for(int i = 0; i < MAX_PROCS; i++ ) {
@@ -264,6 +340,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x03 : { //0x03 => fork
+      doFork();
       PL011_putc( UART0, 'F', true );
     }
 
@@ -271,7 +348,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'E', true );
     }
 
-    case 0x05 : { //0x05 => exec
+    case 0x05 : { //0x05 => exec( x )
+      //char*  x = ( char* )( ctx->gpr[ 0 ] );
       PL011_putc( UART0, 'X', true );
     }
 

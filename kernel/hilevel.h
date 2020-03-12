@@ -41,7 +41,7 @@
  * - a type that captures a process PCB.
  */
 
-#define MAX_PROCS 20
+#define MAX_PROCS 16
 
 typedef int pid_t;
 
@@ -68,6 +68,11 @@ typedef struct {
   uint32_t priority; // Priority of process
   uint32_t basePrio; // Base Priority of process
 } pcb_t;
+
+typedef struct {
+  bool     taken; //Boolean for checking if the stack slot is taken
+  uint32_t tos; // Top of the stack address
+} proc_stack;
 
 
 #endif
