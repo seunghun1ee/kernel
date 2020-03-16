@@ -93,14 +93,6 @@ extern void     main_P4();
 //extern uint32_t tos_P4;
 uint32_t priority_P4 = 1;
 
-extern void     main_P1();
-//extern uint32_t tos_P1;
-uint32_t priority_P1 = 2;
-
-extern void     main_P2();
-//extern uint32_t tos_P2;
-uint32_t priority_P2 = 0;
-
 extern void     main_P5();
 //extern uint32_t tos_P5;
 uint32_t priority_P5 = 0;
@@ -114,7 +106,7 @@ extern uint32_t tos_proc;
 void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
-    stack[ i ].taken = true;
+    stack[ i ].taken = false;
     stack[ i ].tos = tos_console + ((i+1) * 0x00001000);
   }
   memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = console
@@ -125,22 +117,56 @@ void initialiseProcTab() {
   procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
   procTab[ 0 ].priority = 4;
-  procTab[ 0 ].basePrio = 1;
+  procTab[ 0 ].basePrio = 0;
   /*
-  for( int i = 1; i <= MAX_PROCS; i++ ) {
-    if(stack[ i ].taken) {
-      procTab[ i ].pid     = i;
-      procTab[ i ].status  = STATUS_READY;
-      procTab[ i ].tos     = ( uint32_t )( stack[ i ].tos );
-      procTab[ 0 ].ctx.cpsr = 0x50;
-      procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
-      procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
-      procTab[ 0 ].priority = 4;
-      procTab[ 0 ].basePrio = 1;
-    }
-  
-  }
+  memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P3
+  procTab[ 1 ].pid      = 1;
+  procTab[ 1 ].status   = STATUS_READY;
+  procTab[ 1 ].tos      = stack[ 1 ].tos;
+  procTab[ 1 ].ctx.cpsr = 0x50;
+  procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_P3 );
+  procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;
+  procTab[ 1 ].priority = 0;
+  procTab[ 1 ].basePrio = 0;
   */
+}
+
+int findAvaialbeTos() {
+  int result;
+  for (int i = 0; i < MAX_PROCS; i++) {
+    if( stack[ i ].taken == false) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+void setStack(int i, pid_t pid) {
+  stack[ i ].taken = true;
+  stack[ i ].pid = pid;
+}
+
+int getIndexOfStackByTos(uint32_t tosAddress) {
+  int result;
+  for ( int i = 0; i < MAX_PROCS; i++) {
+    if( stack[ i ].tos == tosAddress) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+int getIndexOfStackByPid(pid_t pid) {
+  int result;
+  for ( int i = 0; i < MAX_PROCS; i++) {
+    if( stack[ i ].pid == pid) {
+      result = i;
+      break;
+    }
+  }
+  return result;
 }
 
 int findAvailableProcTab() {
@@ -154,20 +180,17 @@ int findAvailableProcTab() {
   return result;
 }
 
-
-void setProcess(uint32_t pid, const void* entry, int priority) {
-  int index = findAvailableProcTab();
-  uint32_t forkChildTos = getIndexOfProcTable(forkChildPid);
-  procTab[ index ].pid      = pid;
-  procTab[ index ].status   = STATUS_READY;
-  procTab[ index ].tos      = forkChildTos;
-  procTab[ index ].ctx.cpsr = 0x50;
-  procTab[ index ].ctx.pc   = ( uint32_t )( &entry );
-  procTab[ index ].ctx.sp   = procTab[ index ].tos;
-  procTab[ index ].priority = 4;
-  procTab[ index ].basePrio = priority;
+void setProcess(pcb_t proc, uint32_t pid, uint32_t tos, void* entry_point, int priority, int basePriority) {
+  stack[ getIndexOfStackByTos(tos) ].taken = true;
+  proc.pid      = pid;
+  proc.status   = STATUS_READY;
+  proc.tos      = tos;
+  proc.ctx.cpsr = 0x50;
+  proc.ctx.pc   = ( uint32_t )( &entry_point );
+  proc.ctx.sp   = proc.tos;
+  proc.priority = priority;
+  proc.basePrio = basePriority;
 }
-
 
 
 void childProcessInit(uint32_t parentPid, uint32_t childPid) {
@@ -192,6 +215,34 @@ void doFork() {
   childProcessInit(parentPid, childPid);
   forkChildPid = childPid;
 }
+
+void hilevel_fork() {
+  pid_t parentPid = getIndexOfProcTable(executing->pid);
+  pid_t childPid = findAvailableProcTab();
+  
+  int parentProcTabIndex = getIndexOfProcTable(parentPid);
+  int childProcTabIndex = findAvailableProcTab();
+
+  int parentStackIndex = getIndexOfStackByPid(parentPid);
+  int childStackIndex = findAvaialbeTos();
+
+  setStack(childStackIndex, childPid);
+  memcpy(stack[ childStackIndex ].tos, stack[ parentStackIndex ].tos, sizeof( pcb_t ));
+  setProcess(procTab[ childProcTabIndex ] ,childPid, stack[ childStackIndex ].tos, procTab[ parentProcTabIndex ].ctx.pc,
+                procTab[ parentProcTabIndex ].priority, procTab[ parentProcTabIndex ].basePrio);
+  procTab[ parentProcTabIndex ].ctx.gpr[ 0 ] = childPid;
+  procTab[ childProcTabIndex ].ctx.gpr[ 0 ] = 0;
+}
+
+void hilevel_exec(const void* program) {
+  executing->ctx.pc = (uint32_t) &program;
+  executing->ctx.sp = executing->tos;
+  int currentProcTabIndex = getIndexOfProcTable(executing->pid);
+  procTab[ currentProcTabIndex ].ctx.pc = (uint32_t) &program;
+  procTab[ currentProcTabIndex ].ctx.sp = procTab[ currentProcTabIndex ].tos;
+
+}
+
 
 void hilevel_handler_rst(ctx_t* ctx) {
 
@@ -220,58 +271,7 @@ procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
 procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
 procTab[ 0 ].priority = priority_P3;
 procTab[ 0 ].basePrio = priority_P3;
-
-memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_4
-procTab[ 1 ].pid      = 1;
-procTab[ 1 ].status   = STATUS_READY;
-procTab[ 1 ].tos      = ( uint32_t )( &tos_P4  );
-procTab[ 1 ].ctx.cpsr = 0x50;
-procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;
-procTab[ 1 ].priority = priority_P4;
-procTab[ 1 ].basePrio = priority_P4;
-
-memset( &procTab[ 2 ], 0, sizeof( pcb_t ) ); // initialise 2-nd PCB = P_1
-procTab[ 2 ].pid      = 2;
-procTab[ 2 ].status   = STATUS_READY;
-procTab[ 2 ].tos      = ( uint32_t )( &tos_P1  );
-procTab[ 2 ].ctx.cpsr = 0x50;
-procTab[ 2 ].ctx.pc   = ( uint32_t )( &main_P1 );
-procTab[ 2 ].ctx.sp   = procTab[ 2 ].tos;
-procTab[ 2 ].priority = priority_P1;
-procTab[ 2 ].basePrio = priority_P1;
-
-memset( &procTab[ 3 ], 0, sizeof( pcb_t ) ); // initialise 3-rd PCB = P_2
-procTab[ 3 ].pid      = 3;
-procTab[ 3 ].status   = STATUS_READY;
-procTab[ 3 ].tos      = ( uint32_t )( &tos_P2  );
-procTab[ 3 ].ctx.cpsr = 0x50;
-procTab[ 3 ].ctx.pc   = ( uint32_t )( &main_P2 );
-procTab[ 3 ].ctx.sp   = procTab[ 3 ].tos;
-procTab[ 3 ].priority = priority_P2;
-procTab[ 3 ].basePrio = priority_P2;
-
-memset( &procTab[ 4 ], 0, sizeof( pcb_t ) ); // initialise 4-th PCB = P_5
-procTab[ 4 ].pid      = 4;
-procTab[ 4 ].status   = STATUS_READY;
-procTab[ 4 ].tos      = ( uint32_t )( &tos_P5  );
-procTab[ 4 ].ctx.cpsr = 0x50;
-procTab[ 4 ].ctx.pc   = ( uint32_t )( &main_P5 );
-procTab[ 4 ].ctx.sp   = procTab[ 4 ].tos;
-procTab[ 4 ].priority = priority_P5;
-procTab[ 4 ].basePrio = priority_P5;
-
-memset( &procTab[ 5 ], 0, sizeof( pcb_t ) ); // initialise 5-th PCB = console
-procTab[ 5 ].pid      = 5;
-procTab[ 5 ].status   = STATUS_READY;
-procTab[ 5 ].tos      = ( uint32_t )( &tos_console  );
-procTab[ 5 ].ctx.cpsr = 0x50;
-procTab[ 5 ].ctx.pc   = ( uint32_t )( &main_console );
-procTab[ 5 ].ctx.sp   = procTab[ 5 ].tos;
-procTab[ 5 ].priority = 4;
-procTab[ 5 ].basePrio = 1;
 */
-
 int loadedP = 0;
 for(int i = 0; i < MAX_PROCS; i++ ) {
   if(procTab[ i ].status == STATUS_READY) {
@@ -363,7 +363,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x03 : { //0x03 => fork
-      doFork();
+      hilevel_fork();
       PL011_putc( UART0, 'F', true );
     }
 
@@ -373,9 +373,11 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x05 : { //0x05 => exec( x )
-      const void*  x = ( const void* )( ctx->gpr[ 0 ] );
-      setProcess(forkChildPid, x, 0);
-      schedule( ctx );
+      //const void*  x = ( const void* )( ctx->gpr[ 0 ] );
+      //setProcess(forkChildPid, x, 0);
+
+      //schedule( ctx );
+      hilevel_exec(main_P3);
       PL011_putc( UART0, 'X', true );
     }
 

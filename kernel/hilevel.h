@@ -72,6 +72,7 @@ typedef struct {
 typedef struct {
   bool     taken; //Boolean for checking if the stack slot is taken
   uint32_t tos; // Top of the stack address
+  pid_t pid;   //pid of the process uses the stack address
 } proc_stack;
 
 
