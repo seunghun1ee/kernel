@@ -21,6 +21,7 @@ pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
 proc_stack stack[ MAX_PROCS ];
 char* entry_points[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current active process number
+uint32_t forkChildPid;
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -110,7 +111,6 @@ extern uint32_t tos_console;
 extern uint32_t tos_proc;
 
 
-
 void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
@@ -143,6 +143,33 @@ void initialiseProcTab() {
   */
 }
 
+int findAvailableProcTab() {
+  int result;
+  for( int i = 0; i < MAX_PROCS; i++) {
+    if( procTab[ i ].status == STATUS_INVALID || procTab[ i ].status == STATUS_TERMINATED) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+
+void setProcess(uint32_t pid, const void* entry, int priority) {
+  int index = findAvailableProcTab();
+  uint32_t forkChildTos = getIndexOfProcTable(forkChildPid);
+  procTab[ index ].pid      = pid;
+  procTab[ index ].status   = STATUS_READY;
+  procTab[ index ].tos      = forkChildTos;
+  procTab[ index ].ctx.cpsr = 0x50;
+  procTab[ index ].ctx.pc   = ( uint32_t )( &entry );
+  procTab[ index ].ctx.sp   = procTab[ index ].tos;
+  procTab[ index ].priority = 4;
+  procTab[ index ].basePrio = priority;
+}
+
+
+
 void childProcessInit(uint32_t parentPid, uint32_t childPid) {
 
   procTab[ parentPid ].ctx.gpr[ 0 ] = childPid;
@@ -161,13 +188,9 @@ void childProcessInit(uint32_t parentPid, uint32_t childPid) {
 void doFork() {
   uint32_t parentPid = getIndexOfProcTable(executing->pid);
   uint32_t childPid;
-  for( int i = 0; i < MAX_PROCS; i++) {
-    if( procTab[ i ].status == STATUS_INVALID || procTab[ i ].status == STATUS_TERMINATED) {
-      childPid = i;
-      break;
-    }
-  }
+  childPid = findAvailableProcTab();
   childProcessInit(parentPid, childPid);
+  forkChildPid = childPid;
 }
 
 void hilevel_handler_rst(ctx_t* ctx) {
@@ -345,11 +368,14 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x04 : { //0x04 => exit
+      
       PL011_putc( UART0, 'E', true );
     }
 
     case 0x05 : { //0x05 => exec( x )
-      //char*  x = ( char* )( ctx->gpr[ 0 ] );
+      const void*  x = ( const void* )( ctx->gpr[ 0 ] );
+      setProcess(forkChildPid, x, 0);
+      schedule( ctx );
       PL011_putc( UART0, 'X', true );
     }
 
