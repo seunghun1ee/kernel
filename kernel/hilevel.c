@@ -216,7 +216,7 @@ void doFork() {
   forkChildPid = childPid;
 }
 
-void hilevel_fork() {
+void hilevel_fork(ctx_t *ctx) {
   pid_t parentPid = getIndexOfProcTable(executing->pid);
   pid_t childPid = findAvailableProcTab();
   
@@ -227,20 +227,17 @@ void hilevel_fork() {
   int childStackIndex = findAvaialbeTos();
 
   setStack(childStackIndex, childPid);
-  memcpy(stack[ childStackIndex ].tos, stack[ parentStackIndex ].tos, sizeof( pcb_t ));
+  memcpy(stack[ childStackIndex ].tos, stack[ parentStackIndex ].tos, sizeof( 0x00001000 ));
   setProcess(procTab[ childProcTabIndex ] ,childPid, stack[ childStackIndex ].tos, procTab[ parentProcTabIndex ].ctx.pc,
                 procTab[ parentProcTabIndex ].priority, procTab[ parentProcTabIndex ].basePrio);
   procTab[ parentProcTabIndex ].ctx.gpr[ 0 ] = childPid;
   procTab[ childProcTabIndex ].ctx.gpr[ 0 ] = 0;
+  ctx->gpr[ 0 ] = 0;
 }
 
-void hilevel_exec(const void* program) {
-  executing->ctx.pc = (uint32_t) &program;
-  executing->ctx.sp = executing->tos;
-  int currentProcTabIndex = getIndexOfProcTable(executing->pid);
-  procTab[ currentProcTabIndex ].ctx.pc = (uint32_t) &program;
-  procTab[ currentProcTabIndex ].ctx.sp = procTab[ currentProcTabIndex ].tos;
-
+void hilevel_exec(ctx_t *ctx, const void* program) {
+  ctx->pc = (uint32_t) &main_P3;
+  ctx->sp = (uint32_t) &main_P3;
 }
 
 
@@ -363,26 +360,26 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x03 : { //0x03 => fork
-      hilevel_fork();
+      hilevel_fork(ctx);
       PL011_putc( UART0, 'F', true );
     }
 
     case 0x04 : { //0x04 => exit
       
       PL011_putc( UART0, 'E', true );
+      break;
     }
 
     case 0x05 : { //0x05 => exec( x )
-      //const void*  x = ( const void* )( ctx->gpr[ 0 ] );
-      //setProcess(forkChildPid, x, 0);
-
-      //schedule( ctx );
-      hilevel_exec(main_P3);
+    
+      hilevel_exec(ctx, main_P3);
       PL011_putc( UART0, 'X', true );
+      break;
     }
 
     case 0x06 : { //0x06 => kill
       PL011_putc( UART0, 'K', true );
+      break;
     }
 
     default   : { // 0x?? => unknown/unsupported
