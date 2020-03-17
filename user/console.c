@@ -107,7 +107,11 @@ void main_console() {
 
       if( addr != NULL ) {
         if( 0 == fork() ) {
+          puts("child", 5);
           exec( addr );
+        }
+        else {
+          puts("parent", 6);
         }
       }
       else {
