@@ -67,6 +67,7 @@ typedef struct {
      ctx_t    ctx; // execution context
   uint32_t priority; // Priority of process
   uint32_t basePrio; // Base Priority of process
+    pid_t  parent;  //pid of parent process
 } pcb_t;
 
 typedef struct {

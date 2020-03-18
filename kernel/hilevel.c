@@ -30,8 +30,8 @@ void updateCapnAndReadyIndex() {
     if(procTab[ i ].status == STATUS_READY || procTab[ i ].status == STATUS_EXECUTING ) {
       loadedP += 1;
       readyPcbIndex[j] = i;
+      j++;
     }
-    j++;
   }
   capn = loadedP;
 }
@@ -76,8 +76,8 @@ void schedule( ctx_t* ctx ) {
   int max_priority = 0;
   int next_exec;
   for(int i = 0; i < capn; i++) {
-    if(i == getIndexOfProcTable(executing->pid)) {
-      exec = i;
+    if(readyPcbIndex[i] == getIndexOfProcTable(executing->pid)) {
+      exec = readyPcbIndex[i];
       procTab[ readyPcbIndex[i] ].priority = procTab[ readyPcbIndex[i] ].basePrio;
     }
     else {
@@ -213,6 +213,7 @@ void hilevel_fork(ctx_t *ctx) {
   procTab[childPid].tos = (uint32_t) stack[childStackIndex].tos;
   procTab[childPid].priority = procTab[parentProcTabIndex].priority;
   procTab[childPid].basePrio = procTab[parentProcTabIndex].basePrio;
+  procTab[childPid].parent = parentPid;
 
   memcpy((uint32_t) stack[ childStackIndex ].tos - 0x00001000, (uint32_t) stack[ parentStackIndex ].tos - 0x00001000, sizeof( 0x00001000 ));
   memcpy((uint32_t) &procTab[ childProcTabIndex ].ctx, ctx, sizeof(ctx_t));
@@ -230,9 +231,12 @@ void hilevel_exit(ctx_t *ctx, int exit_status) {
   pid_t currentPid = executing->pid;
   int currentProcTabIndex = getIndexOfProcTable(currentPid);
   int currentStackIndex = getIndexOfStackByPid(currentPid);
+  int parentProcTabIndex = getIndexOfProcTable(procTab[currentProcTabIndex].parent);
   if(exit_status == EXIT_SUCCESS) {
     procTab[ currentProcTabIndex ].status = STATUS_TERMINATED;
     stack[ currentStackIndex ].taken = false;
+    updateCapnAndReadyIndex();
+    //dispatch(ctx, &procTab[currentProcTabIndex], &procTab[parentProcTabIndex]);
   }
 }
 
@@ -243,6 +247,17 @@ void hilevel_exec(ctx_t *ctx, void* program) {
 
   ctx->pc = (uint32_t) program;
   ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
+}
+
+void hilevel_kill(ctx_t *ctx, int pid, int signal) {
+  uint32_t sys_signal = signal & 0xFF;
+  int procTabIndex = getIndexOfProcTable((pid_t) pid);
+  int stackIndex = getIndexOfStackByPid((pid_t) pid);
+  int parentProcTabIndex = getIndexOfProcTable(procTab[procTabIndex].parent);
+  procTab[ procTabIndex ].status = STATUS_TERMINATED;
+  stack[ stackIndex ].taken = false;
+  updateCapnAndReadyIndex();
+  //dispatch(ctx, &procTab[procTabIndex], &procTab[parentProcTabIndex]);
 }
 
 
@@ -340,8 +355,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
   switch( id ) {
     case SYS_YIELD : { // 0x00 => yield()
-      //schedule( ctx );
-
+      schedule( ctx );
       break;
     }
 
@@ -384,6 +398,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case SYS_KILL : { //0x06 => kill
+      int pid = (uint32_t) ctx->gpr[ 0 ];
+      int x   = (uint32_t) ctx->gpr[ 1 ];
+      hilevel_kill(ctx, pid, x);
       PL011_putc( UART0, 'K', true );
       break;
     }
