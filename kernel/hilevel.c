@@ -24,6 +24,19 @@ char* entry_points[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current available process number
 uint32_t forkChildPid;
 
+void updateCapnAndReadyIndex() {
+  int loadedP = 0;
+  int j = 0;
+  for(int i = 0; i < MAX_PROCS; i++ ) {
+    if(procTab[ i ].status == STATUS_READY || procTab[ i ].status == STATUS_EXECUTING ) {
+      loadedP += 1;
+      readyPcbIndex[j] = i;
+    }
+    j++;
+  }
+  capn = loadedP;
+}
+
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
 
@@ -290,16 +303,7 @@ procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
 procTab[ 0 ].priority = priority_P3;
 procTab[ 0 ].basePrio = priority_P3;
 */
-int loadedP = 0;
-int j = 0;
-for(int i = 0; i < MAX_PROCS; i++ ) {
-  if(procTab[ i ].status == STATUS_READY || procTab[ i ].status == STATUS_EXECUTING ) {
-    loadedP += 1;
-    readyPcbIndex[j] = i;
-  }
-  j++;
-}
-capn = loadedP;
+updateCapnAndReadyIndex();
 
 
 /* Once the PCBs are initialised, we arbitrarily select the 0-th PCB to be
@@ -342,16 +346,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    int loadedP = 0;
-    int j = 0;
-    for(int i = 0; i < MAX_PROCS; i++ ) {
-      if(procTab[ i ].status == STATUS_READY || procTab[ i ].status == STATUS_EXECUTING ) {
-        loadedP += 1;
-        readyPcbIndex[j] = i;
-      }
-      j++;
-    }
-    capn = loadedP;
+    updateCapnAndReadyIndex();
     PL011_putc( UART0, 'T', true ); TIMER0->Timer1IntClr = 0x01;
     schedule( ctx );
   }
