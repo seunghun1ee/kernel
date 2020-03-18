@@ -66,15 +66,15 @@ void schedule( ctx_t* ctx ) {
   for(int i = 0; i < capn; i++) {
     if(i == getIndexOfProcTable(executing->pid)) {
       exec = i;
-      procTab[ i ].priority = procTab[ i ].basePrio;
+      procTab[ readyPcbIndex[i] ].priority = procTab[ readyPcbIndex[i] ].basePrio;
     }
     else {
-      procTab[ i ].priority += 1;
+      procTab[ readyPcbIndex[i] ].priority += 1;
     }
 
-    if(procTab[ i ].priority > max_priority) {
-      max_priority = procTab[ i ].priority;
-      next_exec = i;
+    if(procTab[ readyPcbIndex[i] ].priority > max_priority) {
+      max_priority = procTab[ readyPcbIndex[i] ].priority;
+      next_exec = readyPcbIndex[i];
     }
   }
   procTab[ exec ].status = STATUS_READY;
