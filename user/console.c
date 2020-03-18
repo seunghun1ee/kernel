@@ -107,11 +107,11 @@ void main_console() {
 
       if( addr != NULL ) {
         if( 0 == fork() ) {
-          puts("child", 5);
+          //puts("child", 5);
           exec( addr );
         }
         else {
-          puts("parent", 6);
+          //puts("parent", 6);
         }
       }
       else {
