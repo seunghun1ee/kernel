@@ -20,7 +20,6 @@
 pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
 proc_stack stack[ MAX_PROCS ];
 int readyPcbIndex[ MAX_PROCS ];
-char* entry_points[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current available process number
 uint32_t forkChildPid;
 
@@ -102,20 +101,12 @@ void schedule( ctx_t* ctx ) {
 
 
 extern void     main_P3();
-//extern uint32_t tos_P3;
-uint32_t priority_P3 = 3;
-
 extern void     main_P4();
-//extern uint32_t tos_P4;
-uint32_t priority_P4 = 1;
-
 extern void     main_P5();
-//extern uint32_t tos_P5;
-uint32_t priority_P5 = 0;
 
 extern void     main_console();
-extern uint32_t tos_svc;
 
+extern uint32_t tos_svc;
 extern uint32_t tos_proc;
 
 
@@ -137,17 +128,6 @@ void initialiseProcTab() {
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
   procTab[ 0 ].priority = 4;
   procTab[ 0 ].basePrio = 0;
-  /*
-  memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P3
-  procTab[ 1 ].pid      = 1;
-  procTab[ 1 ].status   = STATUS_READY;
-  procTab[ 1 ].tos      = stack[ 1 ].tos;
-  procTab[ 1 ].ctx.cpsr = 0x50;
-  procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_P3 );
-  procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;
-  procTab[ 1 ].priority = 0;
-  procTab[ 1 ].basePrio = 0;
-  */
 }
 
 int findAvaialbeTos() {
@@ -198,19 +178,6 @@ int findAvailableProcTab() {
   }
   return result;
 }
-/*
-void setProcess(pcb_t proc, uint32_t pid, uint32_t tos, void* entry_point, int priority, int basePriority) {
-  stack[ getIndexOfStackByTos(tos) ].taken = true;
-  proc.pid      = pid;
-  proc.status   = STATUS_READY;
-  proc.tos      = tos;
-  proc.ctx.cpsr = 0x50;
-  proc.ctx.pc   = ( uint32_t )( &entry_point );
-  proc.ctx.sp   = proc.tos;
-  proc.priority = priority;
-  proc.basePrio = basePriority;
-}
-*/
 
 void setProcess(pcb_t pcb, uint32_t pid, status_t status, uint32_t tos, ctx_t context, int priority, int basePriority) {
   memset( &pcb, 0, sizeof(pcb_t));
@@ -249,26 +216,30 @@ void hilevel_fork(ctx_t *ctx) {
 
   memcpy((uint32_t) stack[ childStackIndex ].tos - 0x00001000, (uint32_t) stack[ parentStackIndex ].tos - 0x00001000, sizeof( 0x00001000 ));
   memcpy((uint32_t) &procTab[ childProcTabIndex ].ctx, ctx, sizeof(ctx_t));
-  //procTab[ parentProcTabIndex ].ctx.gpr[ 0 ] = childPid;
-  
 
+  
   uint32_t sp_offset = (uint32_t) procTab[ parentProcTabIndex ].tos - ctx->sp;
   procTab[ childProcTabIndex ].ctx.sp = (uint32_t) procTab[childProcTabIndex].tos - sp_offset;
   ctx->gpr[ 0 ] = childPid;
   procTab[ childProcTabIndex ].ctx.gpr[ 0 ] = 0;
   
-  //dispatch(ctx, &procTab[getIndexOfProcTable(executing->pid)], &procTab[ childProcTabIndex ]);
-  //procTab[getIndexOfProcTable(executing->pid)].status = STATUS_READY;
-  //procTab[ childProcTabIndex ].status = STATUS_EXECUTING;
+
+}
+
+void hilevel_exit(ctx_t *ctx, int exit_status) {
+  pid_t currentPid = executing->pid;
+  int currentProcTabIndex = getIndexOfProcTable(currentPid);
+  int currentStackIndex = getIndexOfStackByPid(currentPid);
+  if(exit_status == EXIT_SUCCESS) {
+    procTab[ currentProcTabIndex ].status = STATUS_TERMINATED;
+    stack[ currentStackIndex ].taken = false;
+  }
 }
 
 void hilevel_exec(ctx_t *ctx, void* program) {
   int programStackIndex = findAvaialbeTos();
   int currentPidProcTabIndex = getIndexOfProcTable(executing->pid);
   setStack(programStackIndex, executing->pid);
-  //memset( &procTab[ currentPidProcTabIndex ], 0, sizeof( pcb_t ) );
-  //setProcess(procTab[currentPidProcTabIndex], executing->pid, stack[programStackIndex].tos, program, 0,0);
-
 
   ctx->pc = (uint32_t) program;
   ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
@@ -368,13 +339,13 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
    */
 
   switch( id ) {
-    case 0x00 : { // 0x00 => yield()
+    case SYS_YIELD : { // 0x00 => yield()
       //schedule( ctx );
 
       break;
     }
 
-    case 0x01 : { // 0x01 => write( fd, x, n )
+    case SYS_WRITE : { // 0x01 => write( fd, x, n )
       int   fd = ( int   )( ctx->gpr[ 0 ] );
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
@@ -388,25 +359,31 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
 
-    case 0x03 : { //0x03 => fork
-      hilevel_fork(ctx);
-      PL011_putc( UART0, 'F', true );
+    case SYS_READ : { // 0x02 => read( fd, x, n )
+      break;
     }
 
-    case 0x04 : { //0x04 => exit
-      
+    case SYS_FORK : { //0x03 => fork
+      hilevel_fork(ctx);
+      PL011_putc( UART0, 'F', true );
+      break;
+    }
+
+    case SYS_EXIT : { //0x04 => exit( x )
+      int x = (uint32_t) ctx->gpr[ 0 ];
+      hilevel_exit(ctx, x);
       PL011_putc( UART0, 'E', true );
       break;
     }
 
-    case 0x05 : { //0x05 => exec( x )
+    case SYS_EXEC : { //0x05 => exec( x )
       void *x = (uint32_t) ctx->gpr[ 0 ];
       hilevel_exec(ctx, x);
       PL011_putc( UART0, 'X', true );
       break;
     }
 
-    case 0x06 : { //0x06 => kill
+    case SYS_KILL : { //0x06 => kill
       PL011_putc( UART0, 'K', true );
       break;
     }
