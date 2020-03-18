@@ -236,7 +236,6 @@ void hilevel_exit(ctx_t *ctx, int exit_status) {
     procTab[ currentProcTabIndex ].status = STATUS_TERMINATED;
     stack[ currentStackIndex ].taken = false;
     updateCapnAndReadyIndex();
-    //dispatch(ctx, &procTab[currentProcTabIndex], &procTab[parentProcTabIndex]);
   }
 }
 
@@ -257,7 +256,6 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   procTab[ procTabIndex ].status = STATUS_TERMINATED;
   stack[ stackIndex ].taken = false;
   updateCapnAndReadyIndex();
-  //dispatch(ctx, &procTab[procTabIndex], &procTab[parentProcTabIndex]);
 }
 
 
