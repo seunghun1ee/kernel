@@ -21,7 +21,6 @@ pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
 proc_stack stack[ MAX_PROCS ];
 int readyPcbIndex[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current available process number
-uint32_t forkChildPid;
 
 void updateCapnAndReadyIndex() {
   int loadedP = 0;
@@ -208,14 +207,14 @@ void hilevel_fork(ctx_t *ctx) {
 
   setStack(childStackIndex, childPid);
   memset(&procTab[childProcTabIndex], 0, sizeof(pcb_t));
-  procTab[childPid].pid = childPid;
-  procTab[childPid].status = STATUS_READY;
-  procTab[childPid].tos = (uint32_t) stack[childStackIndex].tos;
-  procTab[childPid].priority = procTab[parentProcTabIndex].priority;
-  procTab[childPid].basePrio = procTab[parentProcTabIndex].basePrio;
-  procTab[childPid].parent = parentPid;
+  procTab[childProcTabIndex].pid = childPid;
+  procTab[childProcTabIndex].status = STATUS_READY;
+  procTab[childProcTabIndex].priority = procTab[parentProcTabIndex].priority;
+  procTab[childProcTabIndex].basePrio = procTab[parentProcTabIndex].basePrio;
+  procTab[childProcTabIndex].parent = parentPid;
+  procTab[childProcTabIndex].tos = (uint32_t) stack[childStackIndex].tos;
 
-  memcpy((uint32_t) stack[ childStackIndex ].tos - 0x00001000, (uint32_t) stack[ parentStackIndex ].tos - 0x00001000, sizeof( 0x00001000 ));
+  memcpy((uint32_t) stack[ childStackIndex ].tos - 0x00001000, (uint32_t) stack[ parentStackIndex ].tos - 0x00001000, 0x00001000);
   memcpy((uint32_t) &procTab[ childProcTabIndex ].ctx, ctx, sizeof(ctx_t));
 
   
@@ -236,13 +235,12 @@ void hilevel_exit(ctx_t *ctx, int exit_status) {
     procTab[ currentProcTabIndex ].status = STATUS_TERMINATED;
     stack[ currentStackIndex ].taken = false;
     updateCapnAndReadyIndex();
+    schedule(ctx);
   }
 }
 
 void hilevel_exec(ctx_t *ctx, void* program) {
-  int programStackIndex = findAvaialbeTos();
   int currentPidProcTabIndex = getIndexOfProcTable(executing->pid);
-  setStack(programStackIndex, executing->pid);
 
   ctx->pc = (uint32_t) program;
   ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
@@ -256,6 +254,7 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   procTab[ procTabIndex ].status = STATUS_TERMINATED;
   stack[ stackIndex ].taken = false;
   updateCapnAndReadyIndex();
+  schedule(ctx);
 }
 
 
@@ -353,6 +352,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
   switch( id ) {
     case SYS_YIELD : { // 0x00 => yield()
+      updateCapnAndReadyIndex();
       schedule( ctx );
       break;
     }
