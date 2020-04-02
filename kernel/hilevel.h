@@ -76,5 +76,17 @@ typedef struct {
   pid_t pid;   //pid of the process uses the stack address
 } proc_stack;
 
+typedef struct {
+  int size;  //size of the queue
+  int front;  //index of the front item 
+  int rear;  //index of the rear item
+  int itemCount;  //number of items in queue
+} queue_t;
+
+typedef struct {
+  int   id;
+  queue_t queue;
+} pipe_t;
+
 
 #endif

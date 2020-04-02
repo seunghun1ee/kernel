@@ -256,6 +256,10 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   schedule(ctx);
 }
 
+void hilevel_nice(int pid, int priority) {
+
+}
+
 
 void hilevel_handler_rst(ctx_t* ctx) {
 
@@ -394,11 +398,19 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
 
-    case SYS_KILL : { //0x06 => kill
+    case SYS_KILL : { //0x06 => kill( pid, x )
       int pid = (uint32_t) ctx->gpr[ 0 ];
       int x   = (uint32_t) ctx->gpr[ 1 ];
       hilevel_kill(ctx, pid, x);
       PL011_putc( UART0, 'K', true );
+      break;
+    }
+
+    case SYS_NICE : { //0x07 => nice( pid, x )
+      int pid = (uint32_t) ctx->gpr[ 0 ];
+      int x   = (uint32_t) ctx->gpr[ 1 ];
+      hilevel_nice(pid, x);
+      PL011_putc( UART0, 'N', true);
       break;
     }
 
