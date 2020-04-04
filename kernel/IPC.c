@@ -34,11 +34,30 @@ void enqueue(queue_t *queue, uint8_t item) {
     }
 }
 
+uint8_t peek(queue_t *queue) {
+    return queue->queueArray[queue->front];
+}
 
-void testEnqueue() {
+uint8_t dequeue(queue_t *queue) {
+    if(queue->itemCount > 0) {
+        uint8_t item = peek(queue);
+        queue->itemCount--;
+        queue->front++;
+        return item;
+    }
+    else
+    {
+        printf("Queue is empty\n");
+    } 
+}
+
+
+void testQueue() {
+    //test size init
     queue_t *test = newQueue(5);
     assert(test->size = 5);
 
+    //test enqueue
     enqueue(test, (uint8_t) 0);
     assert(test->queueArray[test->front] == 0);
     assert(test->queueArray[test->rear] == 0);
@@ -81,11 +100,36 @@ void testEnqueue() {
     assert(test->rear == 4); 
     assert(test->itemCount == 5);
 
+    //test peek
+    assert(peek(test) == 0);
+
+    //test dequeue
+    assert(dequeue(test) == 0);
+    assert(test->front = 1);
+    assert(dequeue(test) == 1);
+    assert(test->front = 2);
+    assert(dequeue(test) == 2);
+    assert(test->front = 3);
+    assert(dequeue(test) == 3);
+    assert(test->front = 4);
+    assert(dequeue(test) == 4);
+    assert(test->front = 5);
+    assert(dequeue(test));
+    assert(test->front = 5);
+
+    //test mix
+    enqueue(test, (uint8_t) 'a');
+    enqueue(test, (uint8_t) 'b');
+    assert(dequeue(test) == 'a');
+    enqueue(test, (uint8_t) 'c');
+    assert(dequeue(test) == 'b');
+    assert(dequeue(test) == 'c');
+
     free(test);
 }
 
 int main() {
-    testEnqueue();
+    testQueue();
     printf("test all passed\n");
     return 0;
 }
