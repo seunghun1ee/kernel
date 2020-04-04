@@ -81,6 +81,7 @@ typedef struct {
   int front;  //index of the front item 
   int rear;  //index of the rear item
   int itemCount;  //number of items in queue
+  uint8_t queueArray[1000];  //The array for queue (each element represent one byte)
 } queue_t;
 
 typedef struct {
