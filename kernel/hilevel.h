@@ -41,6 +41,9 @@
  * - a type that captures a process PCB.
  */
 
+// Include functionality relating to pipe
+#include "IPC.h"
+
 #define MAX_PROCS 16
 
 typedef int pid_t;
@@ -75,19 +78,6 @@ typedef struct {
   uint32_t tos; // Top of the stack address
   pid_t pid;   //pid of the process uses the stack address
 } proc_stack;
-
-typedef struct {
-  int size;  //size of the queue
-  int front;  //index of the front item 
-  int rear;  //index of the rear item
-  int itemCount;  //number of items in queue
-  uint8_t queueArray[1000];  //The array for queue (each element represent one byte)
-} queue_t;
-
-typedef struct {
-  int   id;
-  queue_t queue;
-} pipe_t;
 
 
 #endif
