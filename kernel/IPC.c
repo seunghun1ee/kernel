@@ -35,7 +35,12 @@ void enqueue(queue_t *queue, uint8_t item) {
 }
 
 uint8_t peek(queue_t *queue) {
-    return queue->queueArray[queue->front];
+    if(queue->itemCount > 0) {
+        return queue->queueArray[queue->front];
+    }
+    else {
+        printf("Cannot peek, queue is empty\n");
+    }
 }
 
 uint8_t dequeue(queue_t *queue) {
@@ -51,6 +56,14 @@ uint8_t dequeue(queue_t *queue) {
     } 
 }
 
+pipe_t *mkfifo(int idArg, int size) {
+    queue_t *queue = newQueue(size);
+    pipe_t *pipe = malloc(sizeof(pipe_t));
+    pipe->id = idArg;
+    pipe->queue = queue;
+    pipe->open = false;
+    return pipe;
+}
 
 void testQueue() {
     //test size init
@@ -122,14 +135,33 @@ void testQueue() {
     enqueue(test, (uint8_t) 'b');
     assert(dequeue(test) == 'a');
     enqueue(test, (uint8_t) 'c');
+    assert(peek(test) == 'b');
     assert(dequeue(test) == 'b');
+    assert(peek(test) == 'c');
     assert(dequeue(test) == 'c');
+    assert(peek(test));
+    enqueue(test, (uint8_t) 'd');
+    assert(dequeue(test) == 'd');
+    assert(dequeue(test));
 
     free(test);
+    printf("queue test passed\n");
+}
+
+void testPipe() {
+    //test mkfifo
+    pipe_t *testPipe = mkfifo(0, 5);
+    assert(testPipe->open == false);
+    assert(testPipe->queue->itemCount == 0);
+    assert(testPipe->queue->size == 5);
+
+
+    printf("pipe test passed\n");
 }
 
 int main() {
     testQueue();
+    testPipe();
     printf("test all passed\n");
     return 0;
 }

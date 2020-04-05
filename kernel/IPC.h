@@ -15,4 +15,5 @@ typedef struct {
 typedef struct {
   int   id;  //id of the pipe
   queue_t *queue;  //pointer to the queue object
+  bool open;  //bool value to indicate if the pipe is opened or closed
 } pipe_t;
