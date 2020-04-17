@@ -41,8 +41,6 @@
  * - a type that captures a process PCB.
  */
 
-// Include functionality relating to pipe
-#include "IPC.h"
 
 #define MAX_PROCS 16
 
