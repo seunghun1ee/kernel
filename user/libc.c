@@ -147,3 +147,35 @@ void nice( int pid, int x ) {
 
   return;
 }
+
+int sem_init(sem_t *sem, int pshared, unsigned int value) {
+  sem = value;
+
+  return 0;
+}
+
+void sem_post(sem_t *sem) {
+  asm volatile( "mov   r0, %1 \n" // assign r0 = sem
+                "ldrex r1, [ r0 ]\n"
+                "add   r1, r1, #1\n"
+                "strex r2, r1, [ r0 ]\n"
+                "cmp   r2, #0\n"
+                "bne   sem_post\n"
+                "dmb\n"
+                "bx    lr\n");
+  return;
+}
+
+void sem_wait(sem_t *sem) {
+  asm volatile( "mov   r0, %1 \n" // assign r0 = sem
+                "ldrex r1, [ r0 ]\n"
+                "cmp   r1, #0\n"
+                "beq   sem_wait\n"
+                "sub   r1, r1, #1\n"
+                "strex r2, r1, [ r0 ]\n"
+                "cmp   r2, #0\n"
+                "bne   sem_wait\n"
+                "dmb\n"
+                "bx    lr\n");
+  return;
+}
