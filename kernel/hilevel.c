@@ -240,9 +240,10 @@ void hilevel_exit(ctx_t *ctx, int exit_status) {
 }
 
 void hilevel_exec(ctx_t *ctx, void* program) {
-  int currentPidProcTabIndex = getIndexOfProcTable(executing->pid);
+  //int currentPidProcTabIndex = getIndexOfProcTable(executing->pid);
   ctx->pc = (uint32_t) program;
-  ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
+  //ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
+  ctx->sp = executing->tos;
 }
 
 void hilevel_kill(ctx_t *ctx, int pid, int signal) {
