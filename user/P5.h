@@ -14,4 +14,6 @@
 
 #include "libc.h"
 
+extern int is_prime(uint32_t x);
+
 #endif

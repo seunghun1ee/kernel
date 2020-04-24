@@ -17,29 +17,8 @@ uint32_t weight( uint32_t x ) {
   return x;
 }
 
-sem_t mutex;
-int share;
-
-
 void main_P3() {
 
-  sem_init(&mutex, 1);
-  int pid = fork();
-
-  if(pid == 0) {
-    sem_wait(&mutex);
-    share = 5;
-    write(STDOUT_FILENO, "child picked up spoon", 22);
-    sem_post(&mutex);
-  }
-  else {
-    sem_wait(&mutex);
-    share = 6;
-    write(STDOUT_FILENO, "parent picked up spoon", 23);
-    sem_post(&mutex);
-  }
-
-  sem_destroy(&mutex);
   
   while( 1 ) {
     write( STDOUT_FILENO, "P3", 2 );
