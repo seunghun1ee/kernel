@@ -42,7 +42,7 @@
  */
 
 
-#define MAX_PROCS 16
+#define MAX_PROCS 256
 
 typedef int pid_t;
 

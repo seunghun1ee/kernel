@@ -14,7 +14,9 @@ void main_dining() {
     }
 
     philosopher_t ph;
+    ph.state = THINKING;
     
+    fork();
     fork();
     fork();
     fork();
@@ -23,8 +25,8 @@ void main_dining() {
         if(!spoon[j].left) {  //when this mutex is free as left spoon
             ph.left_address = spoon[j].mutex_address;
             spoon[j].left = true;
-            ph.right_address = spoon[(j+1)%4].mutex_address;
-            spoon[(j+1)%4].right = true;
+            ph.right_address = spoon[(j+1)% ph_number].mutex_address;
+            spoon[(j+1)% ph_number].right = true;
             break;
         }
     }
@@ -33,62 +35,47 @@ void main_dining() {
         uint32_t lo = 1 << 1;
         uint32_t hi = 1 << 16;
 
+        ph.state = THINKING;
+        for(int y=0; y < 5; y++) {
+            for( uint32_t x = lo; x < hi; x++ ) {
+                int r = is_prime( x );            
+            }
+        }//THINKING time = 5 is_prime time
+
+        ph.state = HUNGRY;
         sem_wait(ph.left_address);
         write(STDOUT_FILENO, "pick up left ", 14);
-        for( uint32_t x = lo; x < hi; x++ ) {
-            int r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );             
-        }  //picking time = 4 is_prime time
+        for(int y=0; y < 4; y++) {
+            for( uint32_t x = lo; x < hi; x++ ) {
+                int r = is_prime( x );            
+            }
+        }//picking time = 4 is_prime time
         
         sem_wait(ph.right_address);
         write(STDOUT_FILENO, "pick up right ", 15);
-        for( uint32_t x = lo; x < hi; x++ ) {
-            int r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );             
-        }
         
+        ph.state = EATING;
         write(STDOUT_FILENO, "eating ", 8);
-        for( uint32_t x = lo; x < hi; x++ ) {
-            int r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );   
-        }  //eating time = 10 is_prime time
+        for(int y=0; y < 10; y++) {
+            for( uint32_t x = lo; x < hi; x++ ) {
+                int r = is_prime( x );   
+            }  
+        }//eating time = 10 is_prime time
+        
         write(STDOUT_FILENO, "done ", 6);
         
     
         sem_post(ph.right_address);
         write(STDOUT_FILENO, "drop right ", 12);
-        for( uint32_t x = lo; x < hi; x++ ) {
-            int r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );             
-        }  //dropping time = 6 is_prime time
+        for(int y=0; y < 4; y++) {
+            for( uint32_t x = lo; x < hi; x++ ) {
+                int r = is_prime( x );            
+            }
+        }//dropping time = 4 is_prime time
 
         sem_post(ph.left_address);
         write(STDOUT_FILENO, "drop left ", 11);
-        for( uint32_t x = lo; x < hi; x++ ) {
-            int r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );
-            r = is_prime( x );                 
-        }
-        yield();
+        
         
     }
 
