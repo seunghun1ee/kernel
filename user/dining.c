@@ -36,31 +36,32 @@ void main_dining() {
         uint32_t hi = 1 << 16;
 
         ph.state = THINKING;
-        for(int y=0; y < 5; y++) {
-            for( uint32_t x = lo; x < hi; x++ ) {
-                int r = is_prime( x );            
-            }
-        }//THINKING time = 5 is_prime time
+        // for(int y=0; y < 5; y++) {
+        //     for( uint32_t x = lo; x < hi; x++ ) {
+        //         int r = is_prime( x );            
+        //     }
+        // }//THINKING time = 5 is_prime time
 
         ph.state = HUNGRY;
         sem_wait(ph.left_address);
         write(STDOUT_FILENO, "pick up left ", 14);
-        for(int y=0; y < 4; y++) {
-            for( uint32_t x = lo; x < hi; x++ ) {
-                int r = is_prime( x );            
-            }
-        }//picking time = 4 is_prime time
+        // for(int y=0; y < 4; y++) {
+        //     for( uint32_t x = lo; x < hi; x++ ) {
+        //         int r = is_prime( x );            
+        //     }
+        // }//picking time = 4 is_prime time
         
         sem_wait(ph.right_address);
         write(STDOUT_FILENO, "pick up right ", 15);
         
         ph.state = EATING;
         write(STDOUT_FILENO, "eating ", 8);
-        for(int y=0; y < 10; y++) {
-            for( uint32_t x = lo; x < hi; x++ ) {
-                int r = is_prime( x );   
-            }  
-        }//eating time = 10 is_prime time
+        yield();
+        // for(int y=0; y < 10; y++) {
+        //     for( uint32_t x = lo; x < hi; x++ ) {
+        //         int r = is_prime( x );   
+        //     }  
+        // }//eating time = 10 is_prime time
         
         write(STDOUT_FILENO, "done ", 6);
         
@@ -75,7 +76,7 @@ void main_dining() {
 
         sem_post(ph.left_address);
         write(STDOUT_FILENO, "drop left ", 11);
-        
+        yield();
         
     }
 
