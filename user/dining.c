@@ -45,11 +45,11 @@ void main_dining() {
         ph.state = HUNGRY;
         sem_wait(ph.left_address);
         write(STDOUT_FILENO, "pick up left ", 14);
-        for(int y=0; y < 4; y++) {
-            for( uint32_t x = lo; x < hi; x++ ) {
-                int r = is_prime( x );            
-            }
-        }//picking time = 4 is_prime time
+        // for(int y=0; y < 4; y++) {
+        //     for( uint32_t x = lo; x < hi; x++ ) {
+        //         int r = is_prime( x );            
+        //     }
+        // }//picking time = 4 is_prime time
         
         sem_wait(ph.right_address);
         write(STDOUT_FILENO, "pick up right ", 15);
@@ -76,7 +76,7 @@ void main_dining() {
 
         sem_post(ph.left_address);
         write(STDOUT_FILENO, "drop left ", 11);
-        
+        yield();
         
     }
 
