@@ -113,7 +113,7 @@ void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
     stack[ i ].taken = false;
-    stack[ i ].tos = tos_svc + ((i+1) * 0x00001000);
+    stack[ i ].tos = &tos_proc - (i * 0x00001000);
   }
   //initialise console
   stack[ 0 ].taken = true;
