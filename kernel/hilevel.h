@@ -42,7 +42,8 @@
  */
 
 
-#define MAX_PROCS 256
+#define MAX_PROCS 20
+#define STACK_SIZE 0x00001000
 
 typedef int pid_t;
 

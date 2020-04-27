@@ -17,6 +17,8 @@ uint32_t weight( uint32_t x ) {
   return x;
 }
 
+char *input;
+
 void main_P3() {
 
   

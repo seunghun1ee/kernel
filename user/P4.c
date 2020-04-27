@@ -20,6 +20,11 @@ uint32_t gcd( uint32_t x, uint32_t y ) {
 }
 
 void main_P4() {
+
+  int pid = fork();
+  if(pid != 0) {
+      nice(pid, -5);
+    }
   
   while( 1 ) {
     write( STDOUT_FILENO, "P4", 2 );

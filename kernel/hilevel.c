@@ -192,6 +192,18 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
   pcb.status = status;
 }
 
+void hilevel_yield(ctx_t *ctx) {
+  updateCapnAndReadyIndex();
+  schedule( ctx );
+}
+
+void hilevel_write(ctx_t *ctx, char *x, int n) {
+  for( int i = 0; i < n; i++ ) {
+        PL011_putc( UART0, *x++, true );
+      }
+
+  ctx->gpr[ 0 ] = n;
+}
 
 void hilevel_fork(ctx_t *ctx) {
   pid_t parentPid = getIndexOfProcTable(executing->pid);
@@ -257,8 +269,10 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   schedule(ctx);
 }
 
-void hilevel_nice(int pid, int priority) {
-
+void hilevel_nice(int pid, int inc) {
+  signed int signedInc = inc;
+  int pidProcTabIndex = getIndexOfProcTable(pid);
+  procTab[pidProcTabIndex].priority += signedInc;
 }
 
 
@@ -356,8 +370,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
   switch( id ) {
     case SYS_YIELD : { // 0x00 => yield()
-      updateCapnAndReadyIndex();
-      schedule( ctx );
+      hilevel_yield(ctx);
       break;
     }
 
@@ -365,17 +378,21 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int   fd = ( int   )( ctx->gpr[ 0 ] );
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
-
-      for( int i = 0; i < n; i++ ) {
-        PL011_putc( UART0, *x++, true );
-      }
-
-      ctx->gpr[ 0 ] = n;
-
+      hilevel_write(ctx, x, n);
       break;
     }
 
     case SYS_READ : { // 0x02 => read( fd, x, n )
+      int   fd = ( int   )( ctx->gpr[ 0 ] );
+      char*  x = ( char* )( ctx->gpr[ 1 ] );
+      int    n = ( int   )( ctx->gpr[ 2 ] );
+      
+      for( int i = 0; i < n; i++ ) {
+        *x++ = PL011_getc(UART0, true);
+      }
+
+      ctx->gpr[ 0 ] = n;
+
       break;
     }
 

@@ -173,21 +173,27 @@ void sem_post(sem_t *sem) {
   return;
 }
 
-void sem_wait(sem_t *sem) {
-  asm volatile( "mov   r0, %0 \n" // assign r0 = sem
-                "ldrex r1, [ r0 ]\n"
-                "cmp   r1, #0\n"
-                "beq   sem_wait\n"
-                "sub   r1, r1, #1\n"
-                "strex r2, r1, [ r0 ]\n"
-                "cmp   r2, #0\n"
-                "bne   sem_wait\n"
-                "dmb\n"
-                "bx    lr\n"
-                :
+int sem_wait(sem_t *sem) {
+  int r;
+
+  asm volatile( "mov   r0, %1 \n" // assign r0 = sem
+                "ldrex r1, [ r0 ]\n"  //load from semaphore's address exclusively
+                "mov   r2, #1\n"  //move error code 1 to r2
+                "cmp   r1, #0\n"  //check if semaphore value is negative
+                "blt   fail\n"
+                "cmp   r1, #0\n"  //compare semaphore value with 0 (check if it's not available)
+                "beq   sem_wait\n"  //if the value of semaphore is not equal to 1 (not available), restart
+                "sub   r1, r1, #1\n"  //subtract 1 from semaphore value -> 1 - 1 = 0
+                "strex r2, r1, [ r0 ]\n"  //store new semaphore value execlusively at the semaphore's address
+                "cmp   r2, #0\n"  //check if the strex succeded
+                "bne   sem_wait\n"  //restart if strex was not successful
+          "fail: mov   %0, r2 \n"  //assign r = r2
+                "dmb\n"  //data block
+                "bx    lr\n"  //go back to process
+                : "=r" (r)
                 : "r" (sem)
-                : "r0" );
-  return;
+                : );
+  return r;
 }
 
 void sem_destroy(sem_t *sem) {
