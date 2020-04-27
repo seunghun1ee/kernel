@@ -1,7 +1,7 @@
 #include "dining.h"
 #include "P5.h"
 
-sem_t mutex[ph_number];  //forks
+sem_t mutex[ph_number];  //chopsticks
 spoon_t spoon[ph_number];
 
 void main_dining() {
@@ -15,11 +15,10 @@ void main_dining() {
 
     philosopher_t ph;
     ph.state = THINKING;
-    
-    fork();
-    fork();
-    fork();
-    fork();
+
+    for(int e=0; e < 4; e++){
+        fork();
+    }
 
     for(int j = 0; j < ph_number; j++) {
         if(!spoon[j].left) {  //when this mutex is free as left spoon
@@ -36,15 +35,15 @@ void main_dining() {
         uint32_t hi = 1 << 16;
 
         ph.state = THINKING;
-        // for(int y=0; y < 5; y++) {
-        //     for( uint32_t x = lo; x < hi; x++ ) {
-        //         int r = is_prime( x );            
-        //     }
-        // }//THINKING time = 5 is_prime time
+        for(int y=0; y < 5; y++) {
+            for( uint32_t x = lo; x < hi; x++ ) {
+                int r = is_prime( x );            
+            }
+        }//THINKING time = 5 is_prime time
 
         ph.state = HUNGRY;
         sem_wait(ph.left_address);
-        write(STDOUT_FILENO, "pick up left ", 14);
+        write(STDOUT_FILENO, "pick up left ", 15);
         // for(int y=0; y < 4; y++) {
         //     for( uint32_t x = lo; x < hi; x++ ) {
         //         int r = is_prime( x );            
@@ -56,12 +55,11 @@ void main_dining() {
         
         ph.state = EATING;
         write(STDOUT_FILENO, "eating ", 8);
-        yield();
-        // for(int y=0; y < 10; y++) {
-        //     for( uint32_t x = lo; x < hi; x++ ) {
-        //         int r = is_prime( x );   
-        //     }  
-        // }//eating time = 10 is_prime time
+        for(int y=0; y < 10; y++) {
+            for( uint32_t x = lo; x < hi; x++ ) {
+                int r = is_prime( x );   
+            }  
+        }//eating time = 10 is_prime time
         
         write(STDOUT_FILENO, "done ", 6);
         
@@ -76,7 +74,7 @@ void main_dining() {
 
         sem_post(ph.left_address);
         write(STDOUT_FILENO, "drop left ", 11);
-        yield();
+        //yield();
         
     }
 

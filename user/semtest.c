@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "libc.h"
+#include "IPC.h"
 
 sem_t test_lock;
 int s;
