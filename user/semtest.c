@@ -44,8 +44,16 @@ void main_semtest() {
             }
             s = 1;
             write(STDOUT_FILENO, "parent", 7);
+            
             sem_destroy(&test_lock);
+            int destroy_err = sem_destroy(&test_lock);
+            if(destroy_err != 0) {
+                write(STDOUT_FILENO, "destroy error, sem is already destroyed ", 41);
+                exit(EXIT_SUCCESS);
+            }
+
             int post_err = sem_post(&test_lock);
+            
             if(post_err != 0) {
                 write(STDOUT_FILENO, "post error, sem is closed ", 27);
                 exit(EXIT_SUCCESS);
