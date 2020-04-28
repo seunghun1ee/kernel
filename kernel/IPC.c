@@ -8,10 +8,10 @@ int sem_init(sem_t *sem, int value) {
                 "ldr r2, [ r0, #4 ]   \n"  //load sem.init to r2
                 "cmp r2, #0           \n"  //check if the semaphore is not initialised before
                 "streq r1, [ r0 ]     \n"  //store value to the semaphore
-                "addeq r2, r2, #1     \n"  //r2 = r2 + 1
-                "streq r2, [ r0, #4 ] \n"  //set true to sem.init
-                "moveq %0, #0         \n"  //move success code 0 to r
-                "movne %0, #1         \n"  //move error code 1 to r
+                "addeq r2, r2, #1     \n"  //new sem.init value true
+                "streq r2, [ r0, #4 ] \n"  //update sem.init
+                "moveq %0, #0         \n"  //assign r = 0
+                "movne %0, #1         \n"  //assign r = 1
                 : "=r" (r)
                 : "r" (sem), "r" (value)
                 : "r0", "r1" );
@@ -21,7 +21,7 @@ int sem_init(sem_t *sem, int value) {
 int sem_post(sem_t *sem) {
   int r;
 
-  asm volatile( "mov   r0, %1         \n"  // assign r0 = sem
+  asm volatile( "mov   r0, %1         \n"  //assign r0 = sem
                 "ldrex r1, [ r0 ]     \n"  //load from semaphores's address exclusively
                 "mov   r2, #1         \n"  //move error code 1 to r2
                 "cmp   r1, #0         \n"  //check the semaphore value
@@ -35,14 +35,14 @@ int sem_post(sem_t *sem) {
                 "bx    lr             \n"  //go back to process
                 : "=r" (r)
                 : "r" (sem)
-                : );
+                : "r0" );
   return r;
 }
 
 int sem_wait(sem_t *sem) {
   int r;
 
-  asm volatile( "mov   r0, %1         \n"  // assign r0 = sem
+  asm volatile( "mov   r0, %1         \n"  //assign r0 = sem
                 "ldrex r1, [ r0 ]     \n"  //load from semaphore's address exclusively
                 "mov   r2, #1         \n"  //move error code 1 to r2
                 "cmp   r1, #0         \n"  //check the semaphore value
@@ -57,22 +57,22 @@ int sem_wait(sem_t *sem) {
                 "bx    lr             \n"  //go back to process
                 : "=r" (r)
                 : "r" (sem)
-                : );
+                : "r0" );
   return r;
 }
 
 int sem_destroy(sem_t *sem) {
   int r;
 
-  asm volatile( "mov r0, %1 \n"
-                "ldr r2, [ r0, #4 ] \n"
-                "cmp r2, #1 \n"
-                "mvneq r1, #0 \n"
-                "streq r1, [ r0 ]\n"
-                "subeq r2, r2, #1 \n"
-                "streq r2, [ r0, #4 ] \n"
-                "moveq %0, #0 \n"
-                "movne %0, #1 \n"
+  asm volatile( "mov r0, %1           \n"  //asign r0 = sem
+                "ldr r2, [ r0, #4 ]   \n"  //load sem.init to r2
+                "cmp r2, #1           \n"  //check if the semaphore is initialised before
+                "mvneq r1, #0         \n"  //move -1 to r1
+                "streq r1, [ r0 ]     \n"  //store new semaphore value -1
+                "subeq r2, r2, #1     \n"  //new sem.init value false
+                "streq r2, [ r0, #4 ] \n"  //update sem.init
+                "moveq %0, #0         \n"  //assign r = 0
+                "movne %0, #1         \n"  //assign r = 1
                 : "=r" (r)
                 : "r" (sem)
                 : "r0" );
