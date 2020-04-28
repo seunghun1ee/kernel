@@ -113,7 +113,7 @@ void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
     stack[ i ].taken = false;
-    stack[ i ].tos = &tos_proc - (i * 0x00001000);
+    stack[ i ].tos = &tos_proc - (i * STACK_SIZE);
   }
   //initialise console
   stack[ 0 ].taken = true;
@@ -226,7 +226,7 @@ void hilevel_fork(ctx_t *ctx) {
   procTab[childProcTabIndex].parent = parentPid;
   procTab[childProcTabIndex].tos = (uint32_t) stack[childStackIndex].tos;
 
-  memcpy((uint32_t) stack[ childStackIndex ].tos - 0x00001000, (uint32_t) stack[ parentStackIndex ].tos - 0x00001000, 0x00001000);
+  memcpy((uint32_t) stack[ childStackIndex ].tos - STACK_SIZE, (uint32_t) stack[ parentStackIndex ].tos - STACK_SIZE, STACK_SIZE);
   memcpy((uint32_t) &procTab[ childProcTabIndex ].ctx, ctx, sizeof(ctx_t));
 
   
