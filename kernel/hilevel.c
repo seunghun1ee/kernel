@@ -97,14 +97,7 @@ void schedule( ctx_t* ctx ) {
   return;
 }
 
-
-
-extern void     main_P3();
-extern void     main_P4();
-extern void     main_P5();
-
 extern void     main_console();
-
 extern uint32_t tos_svc;
 extern uint32_t tos_proc;
 
