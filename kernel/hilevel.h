@@ -28,6 +28,8 @@
 #include "lolevel.h"
 #include     "int.h"
 
+#include "IPC.h"
+
 /* The kernel source code is made simpler and more consistent by using
  * some human-readable type definitions:
  *

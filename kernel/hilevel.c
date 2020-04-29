@@ -21,6 +21,8 @@ pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
 proc_stack stack[ MAX_PROCS ];
 int readyPcbIndex[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current available process number
+pipe_t pipes[MAX_PIPES];
+file_descriptor_t fd[50];
 
 void updateCapnAndReadyIndex() {
   int loadedP = 0;
@@ -122,6 +124,25 @@ void initialiseProcTab() {
   procTab[ 0 ].basePrio = 0;
 }
 
+void initFd() {
+  for(int i = 0; i < 3; i++) {
+    fd[i].pipeIndex = -1;
+    fd[i].taken = true;
+  }
+  for(int i = 3; i < 50; i++) {
+    fd[i].pipeIndex = -1;
+    fd[i].taken = false;
+  }
+}
+
+void initPipes() {
+  for(int i = 0; i < MAX_PIPES; i++) {
+    pipes[i].read_end = -1;
+    pipes[i].write_end = -1;
+    pipes[i].taken = false;
+  }
+}
+
 int findAvaialbeTos() {
   int result;
   for (int i = 0; i < MAX_PROCS; i++) {
@@ -164,6 +185,28 @@ int findAvailableProcTab() {
   int result;
   for( int i = 0; i < MAX_PROCS; i++) {
     if( procTab[ i ].status == STATUS_INVALID || procTab[ i ].status == STATUS_TERMINATED) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+int findAvailableFd() {
+  int result = -1;
+  for(int i = 3; i < 50; i++) {
+    if(fd[i].taken == false) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+int findAvailablePipe() {
+  int result = -1;
+  for(int i = 0; i < MAX_PIPES; i++) {
+    if(!pipes[i].taken) {
       result = i;
       break;
     }
@@ -268,6 +311,38 @@ void hilevel_nice(int pid, int inc) {
   procTab[pidProcTabIndex].priority += signedInc;
 }
 
+void hilevel_pipe(ctx_t *ctx) {
+  int readIndex = findAvailableFd();
+  if(readIndex < 0) {
+    ctx->gpr[ 0 ] = 1;
+    return;
+  }
+  fd[readIndex].taken = true;
+  
+  int writeIndex = findAvailableFd();
+  if(writeIndex < 0) {
+    ctx->gpr[ 0 ] = 1;
+    return;
+  }
+  fd[writeIndex].taken = true;
+  
+  int pipeIndex = findAvailablePipe();
+  if(pipeIndex < 0) {
+    ctx->gpr[ 0 ] = 1;
+    return;
+  }
+
+  pipes[pipeIndex].read_end = readIndex;
+  pipes[pipeIndex].write_end = writeIndex;
+  pipes[pipeIndex].taken = true;
+
+  fd[readIndex].pipeIndex = pipeIndex;
+  fd[writeIndex].pipeIndex = pipeIndex;
+  
+
+  ctx->gpr[ 0 ] = 0;
+}
+
 
 void hilevel_handler_rst(ctx_t* ctx) {
 
@@ -278,6 +353,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
 
 
 initialiseProcTab();
+initFd();
+initPipes();
 
 /* Automatically execute the user programs P1 and P2 by setting the fields
  * in two associated PCBs.  Note in each case that
@@ -423,6 +500,11 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       hilevel_nice(pid, x);
       PL011_putc( UART0, 'N', true);
       break;
+    }
+
+    case PIPE_OPEN : { //0x08 => pipe( fd )
+      hilevel_pipe(ctx);
+      PL011_putc( UART0, 'P', true);
     }
 
     default   : { // 0x?? => unknown/unsupported

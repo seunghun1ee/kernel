@@ -78,3 +78,17 @@ int sem_destroy(sem_t *sem) {
                 : "r0" );
   return r;
 }
+
+int pipe(int *fd[2]) {
+  int r;
+  
+  asm volatile( "mov r3, %2 \n"  //assign r3 = fd
+                "svc %1 \n"  //make system call PIPE_OPEN
+                "mov %0, r0 \n"
+                : "=r" (r)
+                : "I" (PIPE_OPEN), "r" (fd)
+                : );
+  
+
+  return r;
+}
