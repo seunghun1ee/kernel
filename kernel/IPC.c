@@ -82,13 +82,28 @@ int sem_destroy(sem_t *sem) {
 int pipe(int *fd[2]) {
   int r;
   
-  asm volatile( "mov r3, %2 \n"  //assign r3 = fd
-                "svc %1 \n"  //make system call PIPE_OPEN
-                "mov %0, r0 \n"
+  asm volatile( "mov r0, %2 \n"  //assign r0 = fd
+                "svc %1 \n"  //make system call SYS_PIPE
+                "str r1, [ r0 ] \n"  //store fd[0] = read
+                "str r2, [ r0, #4 ] \n"  //store fd[1] = write
+                "mov %0, r3 \n"  //assign r = r3
                 : "=r" (r)
-                : "I" (PIPE_OPEN), "r" (fd)
-                : );
+                : "I" (SYS_PIPE), "r" (fd)
+                : "r0" );
   
+
+  return r;
+}
+
+int close(int fd) {
+  int r;
+
+  asm volatile( "mov r0, %2 \n"  //assign r0 = fd
+                "svc %1 \n"  //make system call SYS_CLOSE
+                "mov %0, r3 \n"  //assign r = r3
+                : "=r" (r)
+                : "I" (SYS_CLOSE), "r" (fd)
+                : "r0" );
 
   return r;
 }

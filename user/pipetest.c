@@ -6,11 +6,16 @@
 #include "IPC.h"
 
 int pipefd[2];
-int failfd[2];
 
 void main_pipetest() {
-    failfd[0] = 3;
-    pipe(&pipefd);
+    int pipe_err = pipe(&pipefd);
+    if(pipe_err != 0) {
+        write(STDOUT_FILENO, "pipe init error ", 17);
+        exit(EXIT_SUCCESS);
+    }
+
+    close(pipefd[0]);
+    close(pipefd[1]);
 
     exit(EXIT_SUCCESS);
 }

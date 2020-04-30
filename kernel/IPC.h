@@ -1,8 +1,8 @@
 #ifndef __IPC_H
 #define __IPC_H
 
-#define PIPE_OPEN     ( 0x08 )
-#define PIPE_CLOSE    ( 0x09 )
+#define SYS_PIPE     ( 0x08 )
+#define SYS_CLOSE    ( 0x09 )
 
 #define MAX_PIPES 20
 
@@ -30,5 +30,6 @@ extern int sem_post(sem_t *sem);
 extern int sem_wait(sem_t *sem);
 extern int sem_destroy(sem_t *sem);
 extern int pipe(int *fd[2]);
+extern int close(int fd);
 
 #endif

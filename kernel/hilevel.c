@@ -314,21 +314,21 @@ void hilevel_nice(int pid, int inc) {
 void hilevel_pipe(ctx_t *ctx) {
   int readIndex = findAvailableFd();
   if(readIndex < 0) {
-    ctx->gpr[ 0 ] = 1;
+    ctx->gpr[ 3 ] = 1;
     return;
   }
   fd[readIndex].taken = true;
   
   int writeIndex = findAvailableFd();
   if(writeIndex < 0) {
-    ctx->gpr[ 0 ] = 1;
+    ctx->gpr[ 3 ] = 1;
     return;
   }
   fd[writeIndex].taken = true;
   
   int pipeIndex = findAvailablePipe();
   if(pipeIndex < 0) {
-    ctx->gpr[ 0 ] = 1;
+    ctx->gpr[ 3 ] = 1;
     return;
   }
 
@@ -340,7 +340,37 @@ void hilevel_pipe(ctx_t *ctx) {
   fd[writeIndex].pipeIndex = pipeIndex;
   
 
-  ctx->gpr[ 0 ] = 0;
+  ctx->gpr[ 3 ] = 0;
+  ctx->gpr[ 1 ] = readIndex;
+  ctx->gpr[ 2 ] = writeIndex;
+}
+
+void hilevel_close(ctx_t *ctx, int fdIndex) {
+  if(!fd[fdIndex].taken) {
+    //error it's not opened before
+    ctx->gpr[ 3 ] = 1;
+    return;
+  }
+  if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
+    pipes[fd[fdIndex].pipeIndex].read_end = -1;
+  }
+  else if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
+    pipes[fd[fdIndex].pipeIndex].write_end = -1;
+  }
+  else {
+    //error wrong file descriptor
+    ctx->gpr[ 3 ] = 1;
+    return;
+  }
+
+  if(pipes[fd[fdIndex].pipeIndex].read_end == -1 && pipes[fd[fdIndex].pipeIndex].write_end == -1) {
+    pipes[fd[fdIndex].pipeIndex].taken = false;  //when both ends are closed, the pipe is freed
+  }
+
+  fd[fdIndex].pipeIndex = -1;
+  fd[fdIndex].taken = false;
+
+  ctx->gpr[ 3 ] = 0;
 }
 
 
@@ -502,9 +532,17 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
 
-    case PIPE_OPEN : { //0x08 => pipe( fd )
+    case SYS_PIPE : { //0x08 => pipe( fd )
       hilevel_pipe(ctx);
       PL011_putc( UART0, 'P', true);
+      break;
+    }
+
+    case SYS_CLOSE : { //0x09 => close( fd )
+      int fdIndex = (uint32_t) ctx->gpr[ 0 ];
+      hilevel_close(ctx, fdIndex);
+      PL011_putc( UART0, 'C', true );
+      break;
     }
 
     default   : { // 0x?? => unknown/unsupported
