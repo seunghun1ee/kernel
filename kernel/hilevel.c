@@ -233,10 +233,45 @@ void hilevel_yield(ctx_t *ctx) {
   schedule( ctx );
 }
 
-void hilevel_write(ctx_t *ctx, char *x, int n) {
-  for( int i = 0; i < n; i++ ) {
+void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
+  switch (fdIndex) {
+    case 0 ... 2:
+      for( int i = 0; i < n; i++ ) {
         PL011_putc( UART0, *x++, true );
       }
+      break;
+  
+    default:
+      if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
+        for( int i = 0; i < n; i++ ) {
+          pipes[fd[fdIndex].pipeIndex].queue[i] = *x++;
+        }
+      }
+    
+      break;
+  }
+
+  ctx->gpr[ 0 ] = n;
+}
+
+void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
+  switch (fdIndex) {
+    case 0 ... 2:
+      for( int i = 0; i < n; i++ ) {
+        *x++ = PL011_getc(UART0, true);
+      }
+      break;
+  
+    default:
+      if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
+        for( int i = 0; i < n; i++ ) {
+          *x++ = pipes[fd[fdIndex].pipeIndex].queue[i];
+        }
+      }
+    
+      break;
+  }
+  
 
   ctx->gpr[ 0 ] = n;
 }
@@ -478,7 +513,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int   fd = ( int   )( ctx->gpr[ 0 ] );
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
-      hilevel_write(ctx, x, n);
+      hilevel_write(ctx, fd, x, n);
       break;
     }
 
@@ -486,13 +521,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int   fd = ( int   )( ctx->gpr[ 0 ] );
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
-      
-      for( int i = 0; i < n; i++ ) {
-        *x++ = PL011_getc(UART0, true);
-      }
-
-      ctx->gpr[ 0 ] = n;
-
+      hilevel_read(ctx, fd, x, n);
       break;
     }
 
