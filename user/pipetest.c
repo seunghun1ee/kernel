@@ -10,6 +10,7 @@ int pipefd[2];
 void main_pipetest() {
 
     char* b;
+    char* c;
 
     int pipe_err = pipe(&pipefd);
     if(pipe_err != 0) {
@@ -17,10 +18,13 @@ void main_pipetest() {
         exit(EXIT_SUCCESS);
     }
 
-    write(pipefd[1], "a", 2);
+    write(pipefd[1], "abc", 4);
     read(pipefd[0], b, 2);
+    read(pipefd[0], c, 2);
 
     write(STDOUT_FILENO, b, 2);
+    write(STDOUT_FILENO, " ", 2);
+    write(STDOUT_FILENO, c, 2);
 
     close(pipefd[0]);
     close(pipefd[1]);

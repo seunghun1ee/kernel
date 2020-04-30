@@ -5,6 +5,7 @@
 #define SYS_CLOSE    ( 0x09 )
 
 #define MAX_PIPES 20
+#define QUEUE_LEN 8
 
 #include <stdbool.h>
 
@@ -16,7 +17,11 @@ typedef struct {
 typedef struct {
     int read_end;
     int write_end;
-    char *queue;
+    char queue[ QUEUE_LEN ];
+    int front;
+    int back;
+    int length;
+    int itemCount;
     bool taken;
 } pipe_t;
 

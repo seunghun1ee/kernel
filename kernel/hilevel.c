@@ -103,7 +103,9 @@ extern void     main_console();
 extern uint32_t tos_svc;
 extern uint32_t tos_proc;
 
-
+/* Invalidate all entries in the process table, so it's clear they are not
+ * representing valid (i.e., active) processes.
+ */
 void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
@@ -140,6 +142,13 @@ void initPipes() {
     pipes[i].read_end = -1;
     pipes[i].write_end = -1;
     pipes[i].taken = false;
+    for(int j = 0; j < QUEUE_LEN; j++) {
+      pipes[i].queue[j] = NULL;
+    }
+    pipes[i].front = -1;
+    pipes[i].back = -1;
+    pipes[i].itemCount = 0;
+    pipes[i].length = QUEUE_LEN;
   }
 }
 
@@ -228,6 +237,43 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
   pcb.status = status;
 }
 
+void push(int index, char item) {
+  if(pipes[index].itemCount < pipes[index].length) {
+    if(pipes[index].itemCount == 0) {
+      pipes[index].queue[0] = item;
+      
+      pipes[index].front = 0;
+      pipes[index].back = 0;
+    }
+    else if(pipes[index].back == pipes[index].length -1 ) {
+      pipes[index].queue[0] = item;
+      pipes[index].back = 0;
+    }
+    else {
+      pipes[index].back++;
+      pipes[index].queue[pipes[index].back] = item;
+    }
+    pipes[index].itemCount++;
+  }
+  else{
+    //queue is full
+  }
+  
+}
+
+char pop(int index) {
+  if(pipes[index].itemCount > 0) {
+    char item = pipes[index].queue[pipes[index].front];
+    pipes[index].itemCount--;
+    pipes[index].front++;
+    return item;
+  }
+  else {
+    //queue is empty
+  }
+  return -1;
+}
+
 void hilevel_yield(ctx_t *ctx) {
   updateCapnAndReadyIndex();
   schedule( ctx );
@@ -244,7 +290,8 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
         for( int i = 0; i < n; i++ ) {
-          pipes[fd[fdIndex].pipeIndex].queue[i] = *x++;
+          push(fd[fdIndex].pipeIndex, *x++);
+          //pipes[fd[fdIndex].pipeIndex].queue[i] = *x++;
         }
       }
     
@@ -265,7 +312,8 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
         for( int i = 0; i < n; i++ ) {
-          *x++ = pipes[fd[fdIndex].pipeIndex].queue[i];
+          //*x++ = pipes[fd[fdIndex].pipeIndex].queue[i];
+          *x++ = pop(fd[fdIndex].pipeIndex);
         }
       }
     
@@ -323,9 +371,7 @@ void hilevel_exit(ctx_t *ctx, int exit_status) {
 }
 
 void hilevel_exec(ctx_t *ctx, void* program) {
-  //int currentPidProcTabIndex = getIndexOfProcTable(executing->pid);
   ctx->pc = (uint32_t) program;
-  //ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
   ctx->sp = executing->tos;
 }
 
@@ -374,7 +420,6 @@ void hilevel_pipe(ctx_t *ctx) {
   fd[readIndex].pipeIndex = pipeIndex;
   fd[writeIndex].pipeIndex = pipeIndex;
   
-
   ctx->gpr[ 3 ] = 0;
   ctx->gpr[ 1 ] = readIndex;
   ctx->gpr[ 2 ] = writeIndex;
@@ -409,12 +454,8 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
 }
 
 
+
 void hilevel_handler_rst(ctx_t* ctx) {
-
-
-  /* Invalidate all entries in the process table, so it's clear they are not
- * representing valid (i.e., active) processes.
- */
 
 
 initialiseProcTab();
