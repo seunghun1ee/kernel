@@ -9,6 +9,7 @@ int pipefd[2];
 
 void main_pipetest() {
 
+    int failfd = 7;
     char b[10];
     char c[6];
 
@@ -18,16 +19,30 @@ void main_pipetest() {
         exit(EXIT_SUCCESS);
     }
 
-    write(pipefd[1], "abc", 4);
-    read(pipefd[0], b, 2);
-    read(pipefd[0], c, 2);
+    int pid = fork();
 
-    write(STDOUT_FILENO, b, 2);
-    write(STDOUT_FILENO, " ", 2);
-    write(STDOUT_FILENO, c, 2);
+    if(pid == 0) {
+        //child
+        read(pipefd[0], c, 2);
+        write(STDOUT_FILENO, c, 2);
 
-    close(pipefd[0]);
-    close(pipefd[1]);
+        close(pipefd[0]);
+        close(pipefd[1]);
+    }
+    else {
+        //parent
+        write(pipefd[1], "abc", 4);
+        read(pipefd[0], b, 2);
+        write(STDOUT_FILENO, b, 2);
+    }
+
+    
+    
+
+    
+    // if(close(failfd) < 0) {
+    //     write(STDOUT_FILENO, "close error, not opend before ", 31);
+    // }
 
     exit(EXIT_SUCCESS);
 }

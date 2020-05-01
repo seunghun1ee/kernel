@@ -395,21 +395,21 @@ void hilevel_nice(int pid, int inc) {
 void hilevel_pipe(ctx_t *ctx) {
   int readIndex = findAvailableFd();
   if(readIndex < 0) {
-    ctx->gpr[ 3 ] = 1;
+    ctx->gpr[ 3 ] = -1;  //no avilable fd
     return;
   }
   fd[readIndex].taken = true;
   
   int writeIndex = findAvailableFd();
   if(writeIndex < 0) {
-    ctx->gpr[ 3 ] = 1;
+    ctx->gpr[ 3 ] = -1;  //no available fd
     return;
   }
   fd[writeIndex].taken = true;
   
   int pipeIndex = findAvailablePipe();
   if(pipeIndex < 0) {
-    ctx->gpr[ 3 ] = 1;
+    ctx->gpr[ 3 ] = -1;  //no available pipe
     return;
   }
 
@@ -428,7 +428,7 @@ void hilevel_pipe(ctx_t *ctx) {
 void hilevel_close(ctx_t *ctx, int fdIndex) {
   if(!fd[fdIndex].taken) {
     //error it's not opened before
-    ctx->gpr[ 3 ] = 1;
+    ctx->gpr[ 3 ] = -1;
     return;
   }
   if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
@@ -439,7 +439,7 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
   }
   else {
     //error wrong file descriptor
-    ctx->gpr[ 3 ] = 1;
+    ctx->gpr[ 3 ] = -1;
     return;
   }
 
