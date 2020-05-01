@@ -456,6 +456,7 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
 
 
 void hilevel_handler_rst(ctx_t* ctx) {
+  PL011_putc(UART0, 'R', true);
 
 
 initialiseProcTab();

@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "libc.h"
-#include "IPC.h"
+#include "semaphore.h"
 
 int pipefd[2];
 

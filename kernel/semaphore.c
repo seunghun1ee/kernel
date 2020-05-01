@@ -1,4 +1,4 @@
-#include "IPC.h"
+#include "semaphore.h"
 
 int sem_init(sem_t *sem, int value) {
   int r;
@@ -76,35 +76,5 @@ int sem_destroy(sem_t *sem) {
                 : "=r" (r)
                 : "r" (sem)
                 : "r0" );
-  return r;
-}
-
-int pipe(int *fd[2]) {
-  int r;
-  
-  asm volatile( "mov r0, %2 \n"  //assign r0 = fd
-                "svc %1 \n"  //make system call SYS_PIPE
-                "cmp r3, #0 \n"  //check r3 = hilevel return value
-                "streq r1, [ r0 ] \n"  //store fd[0] = read
-                "streq r2, [ r0, #4 ] \n"  //store fd[1] = write
-                "mov %0, r3 \n"  //assign r = r3
-                : "=r" (r)
-                : "I" (SYS_PIPE), "r" (fd)
-                : "r0" );
-  
-
-  return r;
-}
-
-int close(int fd) {
-  int r;
-
-  asm volatile( "mov r0, %2 \n"  //assign r0 = fd
-                "svc %1 \n"  //make system call SYS_CLOSE
-                "mov %0, r3 \n"  //assign r = r3
-                : "=r" (r)
-                : "I" (SYS_CLOSE), "r" (fd)
-                : "r0" );
-
   return r;
 }
