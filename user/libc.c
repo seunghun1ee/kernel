@@ -147,3 +147,33 @@ void nice( int pid, int x ) {
 
   return;
 }
+
+int pipe(int *fd[2]) {
+  int r;
+  
+  asm volatile( "mov r0, %2 \n"  //assign r0 = fd
+                "svc %1 \n"  //make system call SYS_PIPE
+                "cmp r3, #0 \n"  //check r3 = hilevel return value
+                "streq r1, [ r0 ] \n"  //store fd[0] = read
+                "streq r2, [ r0, #4 ] \n"  //store fd[1] = write
+                "mov %0, r3 \n"  //assign r = r3
+                : "=r" (r)
+                : "I" (SYS_PIPE), "r" (fd)
+                : "r0" );
+  
+
+  return r;
+}
+
+int close(int fd) {
+  int r;
+
+  asm volatile( "mov r0, %2 \n"  //assign r0 = fd
+                "svc %1 \n"  //make system call SYS_CLOSE
+                "mov %0, r3 \n"  //assign r = r3
+                : "=r" (r)
+                : "I" (SYS_CLOSE), "r" (fd)
+                : "r0" );
+
+  return r;
+}

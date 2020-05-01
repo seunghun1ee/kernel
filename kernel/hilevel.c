@@ -21,6 +21,8 @@ pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
 proc_stack stack[ MAX_PROCS ];
 int readyPcbIndex[ MAX_PROCS ];
 uint32_t capn = MAX_PROCS;  //capn = current available process number
+pipe_t pipes[MAX_PIPES];
+file_descriptor_t fd[50];
 
 void updateCapnAndReadyIndex() {
   int loadedP = 0;
@@ -101,7 +103,9 @@ extern void     main_console();
 extern uint32_t tos_svc;
 extern uint32_t tos_proc;
 
-
+/* Invalidate all entries in the process table, so it's clear they are not
+ * representing valid (i.e., active) processes.
+ */
 void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
@@ -120,6 +124,32 @@ void initialiseProcTab() {
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
   procTab[ 0 ].priority = 4;
   procTab[ 0 ].basePrio = 0;
+}
+
+void initFd() {
+  for(int i = 0; i < 3; i++) {
+    fd[i].pipeIndex = -1;
+    fd[i].taken = true;
+  }
+  for(int i = 3; i < 50; i++) {
+    fd[i].pipeIndex = -1;
+    fd[i].taken = false;
+  }
+}
+
+void initPipes() {
+  for(int i = 0; i < MAX_PIPES; i++) {
+    pipes[i].read_end = -1;
+    pipes[i].write_end = -1;
+    pipes[i].taken = false;
+    for(int j = 0; j < QUEUE_LEN; j++) {
+      pipes[i].queue[j] = NULL;
+    }
+    pipes[i].front = -1;
+    pipes[i].back = -1;
+    pipes[i].itemCount = 0;
+    pipes[i].length = QUEUE_LEN;
+  }
 }
 
 int findAvaialbeTos() {
@@ -171,6 +201,28 @@ int findAvailableProcTab() {
   return result;
 }
 
+int findAvailableFd() {
+  int result = -1;
+  for(int i = 3; i < 50; i++) {
+    if(fd[i].taken == false) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+int findAvailablePipe() {
+  int result = -1;
+  for(int i = 0; i < MAX_PIPES; i++) {
+    if(!pipes[i].taken) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
 void setProcess(pcb_t pcb, uint32_t pid, status_t status, uint32_t tos, ctx_t context, int priority, int basePriority) {
   memset( &pcb, 0, sizeof(pcb_t));
   pcb.pid      = pid;
@@ -185,15 +237,98 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
   pcb.status = status;
 }
 
+int push(int index, char item) {
+  if(pipes[index].itemCount < pipes[index].length) {
+    if(pipes[index].itemCount == 0) {
+      pipes[index].queue[0] = item;
+      
+      pipes[index].front = 0;
+      pipes[index].back = 0;
+    }
+    else if(pipes[index].back == pipes[index].length -1 ) {
+      pipes[index].queue[0] = item;
+      pipes[index].back = 0;
+    }
+    else {
+      pipes[index].back++;
+      pipes[index].queue[pipes[index].back] = item;
+    }
+    pipes[index].itemCount++;
+    return 0;
+  }
+  
+  //queue is full
+  return -1;
+  
+  
+}
+
+signed char pop(int index) {
+  if(pipes[index].itemCount > 0) {
+    char item = pipes[index].queue[pipes[index].front];
+    pipes[index].itemCount--;
+    pipes[index].front++;
+    return item;
+  }
+  
+  //queue is empty
+  return -1;
+  
+  
+}
+
 void hilevel_yield(ctx_t *ctx) {
   updateCapnAndReadyIndex();
   schedule( ctx );
 }
 
-void hilevel_write(ctx_t *ctx, char *x, int n) {
-  for( int i = 0; i < n; i++ ) {
+void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
+  switch (fdIndex) {
+    case 0 ... 2:
+      for( int i = 0; i < n; i++ ) {
         PL011_putc( UART0, *x++, true );
       }
+      break;
+  
+    default:
+      if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
+        for( int i = 0; i < n; i++ ) {
+          int push_err = push(fd[fdIndex].pipeIndex, x[i]);
+          if(push_err < 0) {
+            ctx->gpr[ 0 ] = -1;
+            return;
+          }
+        }
+      }
+    
+      break;
+  }
+
+  ctx->gpr[ 0 ] = n;
+}
+
+void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
+  switch (fdIndex) {
+    case 0 ... 2:
+      for( int i = 0; i < n; i++ ) {
+        *x++ = PL011_getc(UART0, true);
+      }
+      break;
+  
+    default:
+      if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
+        for( int i = 0; i < n; i++ ) {
+          signed char pop_err = x[i] = pop(fd[fdIndex].pipeIndex);
+          if(pop_err < 0) {
+            ctx->gpr[ 0 ] = -1;
+            return;
+          }
+        }
+      }
+    
+      break;
+  }
+  
 
   ctx->gpr[ 0 ] = n;
 }
@@ -245,9 +380,7 @@ void hilevel_exit(ctx_t *ctx, int exit_status) {
 }
 
 void hilevel_exec(ctx_t *ctx, void* program) {
-  //int currentPidProcTabIndex = getIndexOfProcTable(executing->pid);
   ctx->pc = (uint32_t) program;
-  //ctx->sp = (uint32_t) procTab[ currentPidProcTabIndex ].tos;
   ctx->sp = executing->tos;
 }
 
@@ -268,16 +401,76 @@ void hilevel_nice(int pid, int inc) {
   procTab[pidProcTabIndex].priority += signedInc;
 }
 
+void hilevel_pipe(ctx_t *ctx) {
+  int readIndex = findAvailableFd();
+  if(readIndex < 0) {
+    ctx->gpr[ 3 ] = -1;  //no avilable fd
+    return;
+  }
+  fd[readIndex].taken = true;
+  
+  int writeIndex = findAvailableFd();
+  if(writeIndex < 0) {
+    ctx->gpr[ 3 ] = -1;  //no available fd
+    return;
+  }
+  fd[writeIndex].taken = true;
+  
+  int pipeIndex = findAvailablePipe();
+  if(pipeIndex < 0) {
+    ctx->gpr[ 3 ] = -1;  //no available pipe
+    return;
+  }
+
+  pipes[pipeIndex].read_end = readIndex;
+  pipes[pipeIndex].write_end = writeIndex;
+  pipes[pipeIndex].taken = true;
+
+  fd[readIndex].pipeIndex = pipeIndex;
+  fd[writeIndex].pipeIndex = pipeIndex;
+  
+  ctx->gpr[ 3 ] = 0;
+  ctx->gpr[ 1 ] = readIndex;
+  ctx->gpr[ 2 ] = writeIndex;
+}
+
+void hilevel_close(ctx_t *ctx, int fdIndex) {
+  if(!fd[fdIndex].taken) {
+    //error it's not opened before
+    ctx->gpr[ 3 ] = -1;
+    return;
+  }
+  if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
+    pipes[fd[fdIndex].pipeIndex].read_end = -1;
+  }
+  else if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
+    pipes[fd[fdIndex].pipeIndex].write_end = -1;
+  }
+  else {
+    //error wrong file descriptor
+    ctx->gpr[ 3 ] = -1;
+    return;
+  }
+
+  if(pipes[fd[fdIndex].pipeIndex].read_end == -1 && pipes[fd[fdIndex].pipeIndex].write_end == -1) {
+    pipes[fd[fdIndex].pipeIndex].taken = false;  //when both ends are closed, the pipe is freed
+  }
+
+  fd[fdIndex].pipeIndex = -1;
+  fd[fdIndex].taken = false;
+
+  ctx->gpr[ 3 ] = 0;
+}
+
+
 
 void hilevel_handler_rst(ctx_t* ctx) {
-
-
-  /* Invalidate all entries in the process table, so it's clear they are not
- * representing valid (i.e., active) processes.
- */
+  PL011_putc(UART0, 'R', true);
 
 
 initialiseProcTab();
+initFd();
+initPipes();
 
 /* Automatically execute the user programs P1 and P2 by setting the fields
  * in two associated PCBs.  Note in each case that
@@ -371,7 +564,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int   fd = ( int   )( ctx->gpr[ 0 ] );
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
-      hilevel_write(ctx, x, n);
+      hilevel_write(ctx, fd, x, n);
       break;
     }
 
@@ -379,13 +572,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int   fd = ( int   )( ctx->gpr[ 0 ] );
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
-      
-      for( int i = 0; i < n; i++ ) {
-        *x++ = PL011_getc(UART0, true);
-      }
-
-      ctx->gpr[ 0 ] = n;
-
+      hilevel_read(ctx, fd, x, n);
       break;
     }
 
@@ -422,6 +609,19 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       int x   = (uint32_t) ctx->gpr[ 1 ];
       hilevel_nice(pid, x);
       PL011_putc( UART0, 'N', true);
+      break;
+    }
+
+    case SYS_PIPE : { //0x08 => pipe( fd )
+      hilevel_pipe(ctx);
+      PL011_putc( UART0, 'P', true);
+      break;
+    }
+
+    case SYS_CLOSE : { //0x09 => close( fd )
+      int fdIndex = (uint32_t) ctx->gpr[ 0 ];
+      hilevel_close(ctx, fdIndex);
+      PL011_putc( UART0, 'C', true );
       break;
     }
 

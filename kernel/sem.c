@@ -1,4 +1,4 @@
-#include "IPC.h"
+#include "sem.h"
 
 int sem_init(sem_t *sem, int value) {
   int r;

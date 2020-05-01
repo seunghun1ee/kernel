@@ -4,7 +4,7 @@
 sem_t mutex[ph_number];  //chopsticks
 spoon_t spoon[ph_number];
 
-void main_dining() {
+void main_dining_sem() {
 
     for(int i = 0; i < ph_number; i++) {
         sem_init(&mutex[i], 1);

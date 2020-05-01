@@ -28,6 +28,7 @@
 #include "lolevel.h"
 #include     "int.h"
 
+
 /* The kernel source code is made simpler and more consistent by using
  * some human-readable type definitions:
  *
@@ -44,6 +45,8 @@
 
 #define MAX_PROCS 20
 #define STACK_SIZE 0x00001000
+#define MAX_PIPES 20
+#define QUEUE_LEN 8
 
 typedef int pid_t;
 
@@ -77,6 +80,22 @@ typedef struct {
   bool     taken; //Boolean for checking if the stack slot is taken
   pid_t pid;   //pid of the process uses the stack address
 } proc_stack;
+
+typedef struct {
+    int read_end;
+    int write_end;
+    char queue[ QUEUE_LEN ];
+    int front;
+    int back;
+    int length;
+    int itemCount;
+    bool taken;
+} pipe_t;
+
+typedef struct {
+    int pipeIndex;
+    bool taken;
+} file_descriptor_t;
 
 
 #endif
