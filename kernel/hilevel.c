@@ -290,7 +290,7 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
         for( int i = 0; i < n; i++ ) {
-          push(fd[fdIndex].pipeIndex, *x++);
+          push(fd[fdIndex].pipeIndex, x[i]);
           //pipes[fd[fdIndex].pipeIndex].queue[i] = *x++;
         }
       }
@@ -313,7 +313,7 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
         for( int i = 0; i < n; i++ ) {
           //*x++ = pipes[fd[fdIndex].pipeIndex].queue[i];
-          *x++ = pop(fd[fdIndex].pipeIndex);
+          x[i] = pop(fd[fdIndex].pipeIndex);
         }
       }
     
