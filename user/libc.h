@@ -76,4 +76,9 @@ extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x
 extern void nice( pid_t pid, int x );
 
+// take address of int array, open a pipe and return file descriptors to fd, return 0 on success, otherwise return -1
+extern int pipe(int *fd[2]);
+// close the given file descriptor fd, return 0 on success, otherwise return -1
+extern int close(int fd);
+
 #endif
