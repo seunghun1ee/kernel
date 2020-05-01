@@ -1,5 +1,5 @@
-#ifndef __SEMAPHORE_H
-#define __SEMAPHORE_H
+#ifndef __SEM_H
+#define __SEM_H
 
 
 

@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "libc.h"
-#include "semaphore.h"
+#include "sem.h"
 
 sem_t test_lock;
 int s;

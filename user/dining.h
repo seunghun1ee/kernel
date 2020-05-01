@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #include "libc.h"
-#include "semaphore.h"
+#include "sem.h"
 
 
 
@@ -22,10 +22,23 @@ typedef struct {
 } philosopher_t;
 
 typedef struct {
+    int state;
+    int left_read;
+    int left_write;
+    int right_read;
+    int right_write;
+} philosopher2_t;
+
+typedef struct {
     uint32_t mutex_address;
     bool left;
     bool right;
 } spoon_t;
+
+typedef struct {
+    bool left;
+    bool right;
+} chopstick_t;
 
 
 #endif

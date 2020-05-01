@@ -237,7 +237,7 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
   pcb.status = status;
 }
 
-void push(int index, char item) {
+int push(int index, char item) {
   if(pipes[index].itemCount < pipes[index].length) {
     if(pipes[index].itemCount == 0) {
       pipes[index].queue[0] = item;
@@ -254,24 +254,27 @@ void push(int index, char item) {
       pipes[index].queue[pipes[index].back] = item;
     }
     pipes[index].itemCount++;
+    return 0;
   }
-  else{
-    //queue is full
-  }
+  
+  //queue is full
+  return -1;
+  
   
 }
 
-char pop(int index) {
+signed char pop(int index) {
   if(pipes[index].itemCount > 0) {
     char item = pipes[index].queue[pipes[index].front];
     pipes[index].itemCount--;
     pipes[index].front++;
     return item;
   }
-  else {
-    //queue is empty
-  }
+  
+  //queue is empty
   return -1;
+  
+  
 }
 
 void hilevel_yield(ctx_t *ctx) {
@@ -290,8 +293,11 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
         for( int i = 0; i < n; i++ ) {
-          push(fd[fdIndex].pipeIndex, x[i]);
-          //pipes[fd[fdIndex].pipeIndex].queue[i] = *x++;
+          int push_err = push(fd[fdIndex].pipeIndex, x[i]);
+          if(push_err < 0) {
+            ctx->gpr[ 0 ] = -1;
+            return;
+          }
         }
       }
     
@@ -312,8 +318,11 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
         for( int i = 0; i < n; i++ ) {
-          //*x++ = pipes[fd[fdIndex].pipeIndex].queue[i];
-          x[i] = pop(fd[fdIndex].pipeIndex);
+          signed char pop_err = x[i] = pop(fd[fdIndex].pipeIndex);
+          if(pop_err < 0) {
+            ctx->gpr[ 0 ] = -1;
+            return;
+          }
         }
       }
     
