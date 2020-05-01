@@ -81,16 +81,20 @@ void main_dining_pipe() {
         //         int r = is_prime( x );            
         //     }
         // }//dropping time = 4 is_prime time
-
-        while(write(ph.left_write, "a", 1) < 0) {
-            //wait
+        int left_err = write(ph.left_write, "a", 1);
+        if(left_err < 0) {
+            write(STDOUT_FILENO, "drop left error ",17);
+            exit(EXIT_SUCCESS);
         }
         write(STDOUT_FILENO, "drop left ", 11);
         yield();
         
     }
 
-    
+    for(int i = 0; i < ph_number; i++) {
+        close(chopstick[i][0]);
+        close(chopstick[i][1]);
+    }
 
 
     exit(EXIT_SUCCESS);
