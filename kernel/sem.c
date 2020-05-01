@@ -1,5 +1,12 @@
 #include "sem.h"
 
+// sem_post and sem_wait assembly code is influence by example code in lecture slide
+//http://assets.phoo.org/COMS20001_2019_TB-4/csdsp/os/slide/lec-5-2_s.pdf
+//page 7
+//Which are originally from
+//ARM Synchronization Primitives. Tech. rep. DHT-0008A. ARM Ltd., 2009. url:
+//http://infocenter.arm.com/help/topic/com.arm.doc.dht0008a/index.html (see pp. 5, 7).
+
 int sem_init(sem_t *sem, int value) {
   int r;
 
