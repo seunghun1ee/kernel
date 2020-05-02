@@ -238,6 +238,9 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
 }
 
 int push(int index, char item) {
+  if(item == NULL) {
+    return 0;  //null char ignored
+  }
   if(pipes[index].itemCount < pipes[index].length) {
     if(pipes[index].itemCount == 0) {
       pipes[index].queue[0] = item;
@@ -254,7 +257,7 @@ int push(int index, char item) {
       pipes[index].queue[pipes[index].back] = item;
     }
     pipes[index].itemCount++;
-    return 0;
+    return 1;  //push success
   }
   
   //queue is full
@@ -263,18 +266,20 @@ int push(int index, char item) {
   
 }
 
-signed char pop(int index) {
+char pop(int index) {
   if(pipes[index].itemCount > 0) {
     char item = pipes[index].queue[pipes[index].front];
+    if(item == NULL) {
+      return 0; //ignore null char
+    }
+
     pipes[index].itemCount--;
     pipes[index].front++;
-    return item;
+    return item;  //pop success
   }
   
   //queue is empty
-  return -1;
-  
-  
+  return 0;
 }
 
 void hilevel_yield(ctx_t *ctx) {
@@ -283,20 +288,21 @@ void hilevel_yield(ctx_t *ctx) {
 }
 
 void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
+  int success = 0;
   switch (fdIndex) {
     case 0 ... 2:
-      for( int i = 0; i < n; i++ ) {
+      for(int i = 0; i < n; i++ ) {
         PL011_putc( UART0, *x++, true );
+        success++;
       }
       break;
   
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
-        for( int i = 0; i < n; i++ ) {
+        for(int i = 0; i < n; i++ ) {
           int push_err = push(fd[fdIndex].pipeIndex, x[i]);
-          if(push_err < 0) {
-            ctx->gpr[ 0 ] = -1;
-            return;
+          if(push_err > 0) {  //on success
+            success++;
           }
         }
       }
@@ -304,24 +310,25 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
       break;
   }
 
-  ctx->gpr[ 0 ] = n;
+  ctx->gpr[ 0 ] = success;
 }
 
 void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
+  int success = 0;
   switch (fdIndex) {
     case 0 ... 2:
       for( int i = 0; i < n; i++ ) {
         *x++ = PL011_getc(UART0, true);
+        success++;
       }
       break;
   
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
         for( int i = 0; i < n; i++ ) {
-          signed char pop_err = x[i] = pop(fd[fdIndex].pipeIndex);
-          if(pop_err < 0) {
-            ctx->gpr[ 0 ] = -1;
-            return;
+          char pop_err = x[i] = pop(fd[fdIndex].pipeIndex);
+          if(pop_err > 0) {  //on success
+            success++;
           }
         }
       }
@@ -330,7 +337,7 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
   }
   
 
-  ctx->gpr[ 0 ] = n;
+  ctx->gpr[ 0 ] = success;
 }
 
 void hilevel_fork(ctx_t *ctx) {

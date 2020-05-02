@@ -37,24 +37,14 @@ void main_dining_pipe() {
         uint32_t hi = 1 << 16;
 
         ph.state = THINKING;
-        // for(int y=0; y < 5; y++) {
-        //     for( uint32_t x = lo; x < hi; x++ ) {
-        //         int r = is_prime( x );            
-        //     }
-        // }//THINKING time = 5 is_prime time
 
         ph.state = HUNGRY;
-        while(read(ph.left_read, "b", 1) < 0) {
+        while(read(ph.left_read, "wait", 1) == 0) {
             //wait
         }
         write(STDOUT_FILENO, "pick up left ", 15);
-        // for(int y=0; y < 4; y++) {
-        //     for( uint32_t x = lo; x < hi; x++ ) {
-        //         int r = is_prime( x );            
-        //     }
-        // }//picking time = 4 is_prime time
         
-        while(read(ph.right_read, "b", 1) < 0) {
+        while(read(ph.right_read, "wait", 1) == 0) {
             //wait
         }
         write(STDOUT_FILENO, "pick up right ", 15);
@@ -69,20 +59,14 @@ void main_dining_pipe() {
         
         write(STDOUT_FILENO, "done ", 6);
         
-    
         int right_err = write(ph.right_write, "a", 1);
-        if(right_err < 0) {
+        if(right_err == 0) {
             write(STDOUT_FILENO, "drop right error ",18);
             exit(EXIT_SUCCESS);
         }
         write(STDOUT_FILENO, "drop right ", 12);
-        // for(int y=0; y < 4; y++) {
-        //     for( uint32_t x = lo; x < hi; x++ ) {
-        //         int r = is_prime( x );            
-        //     }
-        // }//dropping time = 4 is_prime time
         int left_err = write(ph.left_write, "a", 1);
-        if(left_err < 0) {
+        if(left_err == 0) {
             write(STDOUT_FILENO, "drop left error ",17);
             exit(EXIT_SUCCESS);
         }

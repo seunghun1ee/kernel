@@ -22,15 +22,16 @@ void main_pipetest() {
 
     if(pid == 0) {
         //child
-        read(pipefd[0], c, 2);
+        read(pipefd[0], c, 8);
         write(STDOUT_FILENO, c, 2);
+        read(pipefd[0], c, 8);
 
         close(pipefd[0]);
         close(pipefd[1]);
     }
     else {
         //parent
-        write(pipefd[1], "abc", 4);
+        write(pipefd[1], "abcasdfgwraasdf", 16);
         read(pipefd[0], b, 2);
         write(STDOUT_FILENO, b, 2);
     }
