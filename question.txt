@@ -32,7 +32,8 @@ Let us know any third-party source code or resources you used (if any) so
 it's clear what's your work and what isn't:
 
 [ I used example codes in the lecture slide for my sem_wait and sem_post.
-  other than that, I didn't use any third-party resources. ]
+  I used tutorial code from https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
+  to implement pipe ]
 
 -------------------------------------------------------------------------------
 

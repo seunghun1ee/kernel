@@ -237,6 +237,9 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
   pcb.status = status;
 }
 
+//push and pop functions are influenced by the tutorial from
+//https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
+
 int push(int index, char item) {
   if(item == NULL) {
     return 0;  //null char ignored
