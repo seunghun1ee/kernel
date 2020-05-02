@@ -295,7 +295,7 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
   switch (fdIndex) {
     case 0 ... 2:
       for(int i = 0; i < n; i++ ) {
-        PL011_putc( UART0, *x++, true );
+        PL011_putc( UART1, *x++, true );
         success++;
       }
       break;
@@ -321,7 +321,7 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
   switch (fdIndex) {
     case 0 ... 2:
       for( int i = 0; i < n; i++ ) {
-        *x++ = PL011_getc(UART0, true);
+        *x++ = PL011_getc(UART1, true);
         success++;
       }
       break;
@@ -476,11 +476,10 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
 
 void hilevel_handler_rst(ctx_t* ctx) {
   PL011_putc(UART0, 'R', true);
-
-
-initialiseProcTab();
-initFd();
-initPipes();
+  
+  initialiseProcTab();
+  initFd();
+  initPipes();
 
 /* Automatically execute the user programs P1 and P2 by setting the fields
  * in two associated PCBs.  Note in each case that
@@ -500,7 +499,7 @@ procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
 procTab[ 0 ].priority = priority_P3;
 procTab[ 0 ].basePrio = priority_P3;
 */
-updateCapnAndReadyIndex();
+  updateCapnAndReadyIndex();
 
 
 /* Once the PCBs are initialised, we arbitrarily select the 0-th PCB to be
@@ -508,7 +507,7 @@ updateCapnAndReadyIndex();
  * is invalid on reset (i.e., no process was previously executing).
  */
 
-dispatch( ctx, NULL, &procTab[ 0 ] );
+  dispatch( ctx, NULL, &procTab[ 0 ] );
 
 /* Configure the mechanism for interrupt handling by
  *
@@ -519,18 +518,22 @@ dispatch( ctx, NULL, &procTab[ 0 ] );
  * - enabling IRQ interrupts.
  */
 
-TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
-TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
-TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
-TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
-TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
+  UART1->IMSC       |= 0x00000010; // enable UART    (Rx) interrupt
+  UART1->CR          = 0x00000301; // enable UART (Tx+Rx)
+ 
+  TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
+  TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
+  TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
+  TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
+  TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
 
-GICC0->PMR          = 0x000000F0; // unmask all            interrupts
-GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
-GICC0->CTLR         = 0x00000001; // enable GIC interface
-GICD0->CTLR         = 0x00000001; // enable GIC distributor
+  GICC0->PMR          = 0x000000F0; // unmask all            interrupts
+  //GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
+  GICD0->ISENABLER1  |= 0x00003010; // enable UART0/1 (Rx) interrupt & enable timer interrupt
+  GICC0->CTLR         = 0x00000001; // enable GIC interface
+  GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
-int_enable_irq();
+  int_enable_irq();
 
   return;
 }
@@ -547,7 +550,10 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, 'T', true ); TIMER0->Timer1IntClr = 0x01;
     schedule( ctx );
   }
-
+  else if( id == GIC_SOURCE_UART1 ) {
+    UART1->ICR = 0x10;
+  }
+  
   // Step 5: write the interrupt identifier to signal we're done.
 
   GICC0->EOIR = id;
@@ -575,6 +581,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
       hilevel_write(ctx, fd, x, n);
+      //UART1->ICR = 0x10;
       break;
     }
 
@@ -583,6 +590,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
       hilevel_read(ctx, fd, x, n);
+      //UART1->ICR = 0x10;
       break;
     }
 

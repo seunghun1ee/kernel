@@ -8,6 +8,10 @@ int pipefd[2];
 
 void main_pipetest() {
 
+    char *input = "hello";
+    read(STDIN_FILENO, input, 5);
+    write(STDOUT_FILENO, input, 5);
+
     int failfd = 7;
     char b[10];
     char c[6];
