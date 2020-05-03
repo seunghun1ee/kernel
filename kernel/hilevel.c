@@ -478,6 +478,17 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
 
 uint16_t fb[ 600 ][ 800 ];
 
+void putB(uint16_t x, uint16_t y) {
+  fb[y][x] = fb[y][x+1] = fb[y][x+2] = fb[y][x+3] = fb[y][x+4] = 0x0;
+  fb[y+1][x+1] = fb[y+1][x+5] = 0x0;
+  fb[y+2][x+1] = fb[y+2][x+5] = 0x0;
+  fb[y+3][x+1] = fb[y+3][x+2] = fb[y+3][x+3] = fb[y+3][x+4] = 0x0;
+  fb[y+4][x+1] = fb[y+4][x+5] = 0x0;
+  fb[y+5][x+1] = fb[y+5][x+5] = 0x0;
+  fb[y+6][x+1] = fb[y+6][x+5] = 0x0;
+  fb[y+7][x] = fb[y+7][x+1] = fb[y+7][x+2] = fb[y+7][x+3] = fb[y+7][x+4] = 0x0;
+}
+
 void hilevel_handler_rst(ctx_t* ctx) {
   PL011_putc(UART0, 'R', true);
   
@@ -574,6 +585,26 @@ void hilevel_handler_irq(ctx_t* ctx) {
   }
   else if( id == GIC_SOURCE_UART1 ) {
     UART1->ICR = 0x10;
+  }
+  else if     ( id == GIC_SOURCE_PS20 ) {
+    uint8_t x = PL050_getc( PS20 );
+
+    PL011_putc( UART0, '0',                      true );  
+    PL011_putc( UART0, '<',                      true ); 
+    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    PL011_putc( UART0, '>',                      true );
+
+    putB(400,400);
+  }
+  else if( id == GIC_SOURCE_PS21 ) {
+    uint8_t x = PL050_getc( PS21 );
+
+    PL011_putc( UART0, '1',                      true );  
+    PL011_putc( UART0, '<',                      true ); 
+    PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+    PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+    PL011_putc( UART0, '>',                      true ); 
   }
   
   // Step 5: write the interrupt identifier to signal we're done.
