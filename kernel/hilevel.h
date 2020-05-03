@@ -70,8 +70,8 @@ typedef struct {
   status_t status; // current status
   uint32_t    tos; // address of Top of Stack (ToS)
      ctx_t    ctx; // execution context
-  uint32_t priority; // Priority of process
-  uint32_t basePrio; // Base Priority of process
+  int32_t priority; // Priority of process
+  int32_t basePrio; // Base Priority of process
     pid_t  parent;  //pid of parent process
 } pcb_t;
 

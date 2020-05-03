@@ -405,10 +405,9 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   schedule(ctx);
 }
 
-void hilevel_nice(int pid, int inc) {
-  signed int signedInc = inc;
+void hilevel_nice(int pid, int32_t inc) {
   int pidProcTabIndex = getIndexOfProcTable(pid);
-  procTab[pidProcTabIndex].priority += signedInc;
+  procTab[pidProcTabIndex].priority += inc;
 }
 
 void hilevel_pipe(ctx_t *ctx) {
@@ -581,7 +580,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
       hilevel_write(ctx, fd, x, n);
-      //UART1->ICR = 0x10;
       break;
     }
 
@@ -590,7 +588,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       char*  x = ( char* )( ctx->gpr[ 1 ] );
       int    n = ( int   )( ctx->gpr[ 2 ] );
       hilevel_read(ctx, fd, x, n);
-      //UART1->ICR = 0x10;
       break;
     }
 
@@ -624,7 +621,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
     case SYS_NICE : { //0x07 => nice( pid, x )
       int pid = (uint32_t) ctx->gpr[ 0 ];
-      int x   = (uint32_t) ctx->gpr[ 1 ];
+      int32_t x   = (uint32_t) ctx->gpr[ 1 ];
       hilevel_nice(pid, x);
       PL011_putc( UART0, 'N', true);
       break;
