@@ -22,6 +22,7 @@ typedef struct {
 } philosopher_t;
 
 typedef struct {
+    int index;
     int state;
     int left_read;
     int left_write;

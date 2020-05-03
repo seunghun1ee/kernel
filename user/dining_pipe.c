@@ -14,6 +14,7 @@ void main_dining_pipe() {
     }
 
     philosopher2_t ph;
+    
     ph.state = THINKING;
 
     for(int e=0; e < 4; e++){
@@ -22,6 +23,7 @@ void main_dining_pipe() {
 
     for(int j = 0; j < ph_number; j++) {
         if(!taken[j].left) {  //when this mutex is free as left spoon
+            ph.index = j;
             ph.left_read = chopstick[j][0];
             ph.left_write = chopstick[j][1];
             taken[j].left = true;
@@ -31,6 +33,8 @@ void main_dining_pipe() {
             break;
         }
     }
+    char *ph_index;
+    
 
     while(1) {
         uint32_t lo = 1 << 1;
@@ -42,35 +46,46 @@ void main_dining_pipe() {
         while(read(ph.left_read, "wait", 1) == 0) {
             //wait
         }
-        write(STDOUT_FILENO, "pick up left ", 15);
+        itoa(ph_index, ph.index);
+        write(STDOUT_FILENO, ph_index, 2);
+        write(STDOUT_FILENO, " ", 1);
+        write(STDOUT_FILENO, "picked up left\n", 16);
         
         while(read(ph.right_read, "wait", 1) == 0) {
             //wait
         }
-        write(STDOUT_FILENO, "pick up right ", 15);
+        itoa(ph_index, ph.index);
+        write(STDOUT_FILENO, ph_index, 2);
+        write(STDOUT_FILENO, " ", 1);
+        write(STDOUT_FILENO, "picked up right\n", 17);
         
         ph.state = EATING;
-        write(STDOUT_FILENO, "eating ", 8);
+        itoa(ph_index, ph.index);
+        write(STDOUT_FILENO, ph_index, 2);
+        write(STDOUT_FILENO, " ", 1);
+        write(STDOUT_FILENO, "is eating\n", 11);
         for(int y=0; y < 10; y++) {
             for( uint32_t x = lo; x < hi; x++ ) {
                 int r = is_prime( x );   
             }  
         }//eating time = 10 is_prime time
-        
-        write(STDOUT_FILENO, "done ", 6);
+        itoa(ph_index, ph.index);
+        write(STDOUT_FILENO, ph_index, 2);
+        write(STDOUT_FILENO, " ", 1);
+        write(STDOUT_FILENO, "done\n", 6);
         
         int right_err = write(ph.right_write, "a", 1);
         if(right_err == 0) {
             write(STDOUT_FILENO, "drop right error ",18);
             exit(EXIT_SUCCESS);
         }
-        write(STDOUT_FILENO, "drop right ", 12);
+        //write(STDOUT_FILENO, "drop right ", 12);
         int left_err = write(ph.left_write, "a", 1);
         if(left_err == 0) {
             write(STDOUT_FILENO, "drop left error ",17);
             exit(EXIT_SUCCESS);
         }
-        write(STDOUT_FILENO, "drop left ", 11);
+        //write(STDOUT_FILENO, "drop left ", 11);
         yield();
         
     }
