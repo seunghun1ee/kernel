@@ -7,7 +7,7 @@ chopstick_t taken[ph_number];  //only for initialisation
 void main_dining_pipe() {
 
     for(int i = 0; i < ph_number; i++) {
-        pipe(&chopstick[i]);
+        pipe(chopstick[i]);
         taken[i].left = false;
         taken[i].right = false;
         write(chopstick[i][1], "a", 1);

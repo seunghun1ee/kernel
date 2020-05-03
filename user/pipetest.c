@@ -16,7 +16,7 @@ void main_pipetest() {
     char b[10];
     char c[6];
 
-    int pipe_err = pipe(&pipefd);
+    int pipe_err = pipe(pipefd);
     if(pipe_err != 0) {
         write(STDOUT_FILENO, "pipe init error ", 17);
         exit(EXIT_SUCCESS);
