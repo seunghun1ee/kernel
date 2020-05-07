@@ -46,7 +46,7 @@
 #define MAX_PROCS 20
 #define STACK_SIZE 0x00001000
 #define MAX_PIPES 20
-#define QUEUE_LEN 8
+#define QUEUE_LEN 1000
 
 typedef int pid_t;
 

@@ -293,13 +293,27 @@ void hilevel_yield(ctx_t *ctx) {
 void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
   int success = 0;
   switch (fdIndex) {
-    case 0 ... 2:
+    case STDIN_FILENO ... STDOUT_FILENO:
       for(int i = 0; i < n; i++ ) {
         PL011_putc( UART1, *x++, true );
         success++;
       }
       break;
-  
+
+    case STDERR_FILENO:
+      PL011_putc( UART1, '[', true );
+      PL011_putc( UART1, 'E', true );
+      PL011_putc( UART1, 'R', true );
+      PL011_putc( UART1, 'R', true );
+      PL011_putc( UART1, 'O', true );
+      PL011_putc( UART1, 'R', true );
+      PL011_putc( UART1, ']', true );
+      for(int i = 0; i < n; i++ ) {
+        PL011_putc( UART1, *x++, true );
+        success++;
+      }
+      break;
+
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
         for(int i = 0; i < n; i++ ) {
@@ -319,13 +333,27 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
 void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
   int success = 0;
   switch (fdIndex) {
-    case 0 ... 2:
+    case STDIN_FILENO ... STDOUT_FILENO:
       for( int i = 0; i < n; i++ ) {
         *x++ = PL011_getc(UART1, true);
         success++;
       }
       break;
-  
+
+    case STDERR_FILENO:
+      PL011_putc( UART1, '[', true );
+      PL011_putc( UART1, 'E', true );
+      PL011_putc( UART1, 'R', true );
+      PL011_putc( UART1, 'R', true );
+      PL011_putc( UART1, 'O', true );
+      PL011_putc( UART1, 'R', true );
+      PL011_putc( UART1, ']', true );
+      for(int i = 0; i < n; i++ ) {
+        PL011_putc( UART1, *x++, true );
+        success++;
+      }
+      break;
+
     default:
       if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
         for( int i = 0; i < n; i++ ) {

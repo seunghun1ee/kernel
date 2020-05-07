@@ -11,6 +11,7 @@ void main_pipetest() {
     char *input = "hello";
     read(STDIN_FILENO, input, 5);
     write(STDOUT_FILENO, input, 5);
+    write(STDERR_FILENO, "error? ", 8);
 
     int failfd = 7;
     char b[10];
