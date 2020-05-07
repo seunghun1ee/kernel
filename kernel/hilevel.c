@@ -477,16 +477,27 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
 }
 
 uint16_t fb[ 600 ][ 800 ];
+uint16_t currentX = 0;
+uint16_t currentY = 0;
 
 void putB(uint16_t x, uint16_t y) {
-  fb[y][x] = fb[y][x+1] = fb[y][x+2] = fb[y][x+3] = fb[y][x+4] = 0x0;
-  fb[y+1][x+1] = fb[y+1][x+5] = 0x0;
-  fb[y+2][x+1] = fb[y+2][x+5] = 0x0;
-  fb[y+3][x+1] = fb[y+3][x+2] = fb[y+3][x+3] = fb[y+3][x+4] = 0x0;
-  fb[y+4][x+1] = fb[y+4][x+5] = 0x0;
-  fb[y+5][x+1] = fb[y+5][x+5] = 0x0;
-  fb[y+6][x+1] = fb[y+6][x+5] = 0x0;
-  fb[y+7][x] = fb[y+7][x+1] = fb[y+7][x+2] = fb[y+7][x+3] = fb[y+7][x+4] = 0x0;
+  fb[y][x] = fb[y][x+1] = fb[y][x+2] = fb[y][x+3] = fb[y][x+4] =
+  fb[y+1][x+1] = fb[y+1][x+5] =
+  fb[y+2][x+1] = fb[y+2][x+5] =
+  fb[y+3][x+1] = fb[y+3][x+2] = fb[y+3][x+3] = fb[y+3][x+4] =
+  fb[y+4][x+1] = fb[y+4][x+5] =
+  fb[y+5][x+1] = fb[y+5][x+5] =
+  fb[y+6][x+1] = fb[y+6][x+5] =
+  fb[y+7][x] = fb[y+7][x+1] = fb[y+7][x+2] = fb[y+7][x+3] = fb[y+7][x+4] = 0x7FFF;
+  updateXY();
+}
+
+void updateXY() {
+  currentX += 8;
+  if(currentX == 800) {
+    currentY += 8;
+    currentX = 0;
+  }
 }
 
 void hilevel_handler_rst(ctx_t* ctx) {
@@ -595,7 +606,16 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
     PL011_putc( UART0, '>',                      true );
 
-    putB(400,400);
+    switch (x)
+    {
+    case 0x32:
+      putB(currentX, currentY);
+      break;
+    
+    default:
+      break;
+    }
+    
   }
   else if( id == GIC_SOURCE_PS21 ) {
     uint8_t x = PL050_getc( PS21 );
