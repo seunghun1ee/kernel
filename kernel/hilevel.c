@@ -290,6 +290,38 @@ char pop(int index) {
   return 0;
 }
 
+uint16_t fb[ 600 ][ 800 ];
+uint16_t currentX = 0;
+uint16_t currentY = 0;
+char **char_set;
+
+
+void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
+  char *bitmap = char_set[character];
+  for(int i = 0; i < 8; i++) {
+    for(int j = 0; j < 8; j++) {
+      switch(bitmap[(j*8)+i]) {
+        case '1': {
+          fb[y+j][x+i] = colour;
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    }
+  }
+  updateXY();
+}
+
+void updateXY() {
+  currentX += 8;
+  if(currentX == 800) {
+    currentY += 10;
+    currentX = 0;
+  }
+}
+
 void hilevel_yield(ctx_t *ctx) {
   updateCapnAndReadyIndex();
   schedule( ctx );
@@ -300,6 +332,7 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
   switch (fdIndex) {
     case 0 ... 2:
       for(int i = 0; i < n; i++ ) {
+        putChar(currentX, currentY, *x, 0x7FFF);
         PL011_putc( UART1, *x++, true );
         success++;
       }
@@ -476,65 +509,7 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
   ctx->gpr[ 3 ] = 0;
 }
 
-uint16_t fb[ 600 ][ 800 ];
-uint16_t currentX = 0;
-uint16_t currentY = 0;
-char **char_set;
 
-
-void convertFromBitmap(uint16_t x, uint16_t y, char* bitmap, uint16_t colour) {
-  for(int i = 0; i < 8; i++) {
-    for(int j = 0; j < 8; j++) {
-      switch(bitmap[(j*8)+i]) {
-        case '1': {
-          fb[y+j][x+i] = colour;
-          break;
-        }
-        default: {
-          break;
-        }
-      }
-    }
-  }
-}
-
-void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
-  char *bitmap = char_set[character];
-  for(int i = 0; i < 8; i++) {
-    for(int j = 0; j < 8; j++) {
-      switch(bitmap[(j*8)+i]) {
-        case '1': {
-          fb[y+j][x+i] = colour;
-          break;
-        }
-        default: {
-          break;
-        }
-      }
-    }
-  }
-  updateXY();
-}
-
-void putA(uint16_t x, uint16_t y, uint16_t colour) {
-  char bitmap[64] = "0111000010001000100010001111100010001000100010001000100010001000";
-  convertFromBitmap(x,y,bitmap,colour);
-  updateXY();
-}
-
-void putB(uint16_t x, uint16_t y, uint16_t colour) {
-  char bitmap[64] = "1111000010001000100010001111000010001000100010001000100011110000";
-  convertFromBitmap(x,y,bitmap,colour);
-  updateXY();
-}
-
-void updateXY() {
-  currentX += 8;
-  if(currentX == 800) {
-    currentY += 10;
-    currentX = 0;
-  }
-}
 
 void hilevel_handler_rst(ctx_t* ctx) {
   PL011_putc(UART0, 'R', true);
