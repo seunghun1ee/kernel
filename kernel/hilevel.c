@@ -758,6 +758,10 @@ void hilevel_handler_irq(ctx_t* ctx) {
           //backspace
           updateXY(OP_SUB);
           break;
+        case 0x5A:
+          //enter key
+          lineFeed();
+          break;  
         case 0x5D:
           putChar(currentX,currentY,'#',0x7FFF);
           break;
