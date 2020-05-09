@@ -301,11 +301,48 @@ void lineFeed() {
   currentX = 0;
 }
 
-void updateXY() {
-  currentX += 8;
-  if(currentX == 800) {
-    lineFeed();
+
+void backspace() {
+  if(currentX == 0 && currentY == 0) {
+    return;
   }
+  
+  if(currentX == 0) {
+    if(currentY != 0) {
+      currentY -= 10;
+      currentX = 792;
+    }
+  }
+  else {
+    currentX -= 8;
+  }
+
+  for(int i = 0; i < 8; i++) {
+    for(int j = 0; j < 8; j++) {
+      fb[ currentY + i ][ currentX + j ] = 0x0; 
+    }
+  }
+}
+
+void updateXY(update_display_op op) {
+  uint8_t tempX = currentX;
+  uint8_t tempY = currentY;
+  switch (op)
+  {
+  case OP_ADD:
+    currentX += 8;
+    if(currentX >= 800) {
+      lineFeed();
+    }
+    break;
+  
+  case OP_SUB:
+    backspace();
+    break;
+  default:
+    break;
+  }
+  
 }
 
 void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
@@ -329,7 +366,7 @@ void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
           }
         }
       }
-      updateXY();
+      updateXY(OP_ADD);
       break;
   }
 }
@@ -602,7 +639,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
 
   for( int i = 0; i < 600; i++ ) {
     for( int j = 0; j < 800; j++ ) {
-      fb[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
+      //fb[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
+      fb[ i ][ j ] = 0x0;
     }
   }
   char_set['\0'] = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -714,10 +752,11 @@ void hilevel_handler_irq(ctx_t* ctx) {
       switch (x) {
         case 0x29:
           //space bar
-          updateXY();
+          updateXY(OP_ADD);
           break;
         case 0x66:
           //backspace
+          updateXY(OP_SUB);
           break;
         case 0x5D:
           putChar(currentX,currentY,'#',0x7FFF);
@@ -865,7 +904,6 @@ void hilevel_handler_irq(ctx_t* ctx) {
           break;
       }
     }
-    
     prev_ps20_id = x;
     
   }

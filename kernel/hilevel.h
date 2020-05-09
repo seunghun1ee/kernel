@@ -101,5 +101,10 @@ typedef struct {
     bool taken;
 } file_descriptor_t;
 
+typedef enum {
+  OP_ADD,
+  OP_SUB
+} update_display_op;
+
 
 #endif
