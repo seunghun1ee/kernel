@@ -716,6 +716,28 @@ void hilevel_handler_irq(ctx_t* ctx) {
           //space bar
           updateXY();
           break;
+        case 0x66:
+          //backspace
+          break;
+        case 0x5D:
+          putChar(currentX,currentY,'#',0x7FFF);
+          break;
+        case 0x52:
+          putChar(currentX,currentY,'\'',0x7FFF);
+          break;
+        case 0x41:
+          putChar(currentX,currentY,',',0x7FFF);
+          break;
+        case 0x4E:
+          putChar(currentX,currentY,'-',0x7FFF);
+          break;
+        case 0x49:
+          putChar(currentX,currentY,'.',0x7FFF);
+          break;
+        case 0x4A:
+          putChar(currentX,currentY,'/',0x7FFF);
+          break;
+
         case 0x45:
           putChar(currentX,currentY,'0',0x7FFF);
           break;
@@ -745,7 +767,10 @@ void hilevel_handler_irq(ctx_t* ctx) {
           break;
         case 0x46:
           putChar(currentX,currentY,'9',0x7FFF);
-          break;                  
+          break;
+        case 0x4C:
+          putChar(currentX,currentY,';',0x7FFF);
+          break;                    
         case 0x1C:
           putChar(currentX,currentY,'A',0x7FFF);
           break;
@@ -823,7 +848,19 @@ void hilevel_handler_irq(ctx_t* ctx) {
           break;
         case 0x1A:
           putChar(currentX,currentY,'Z',0x7FFF);
-          break;    
+          break;
+        case 0x55:
+          putChar(currentX,currentY,'=',0x7FFF);
+          break;
+        case 0x54:
+          putChar(currentX,currentY,'[',0x7FFF);
+          break;
+        case 0x61:
+          putChar(currentX,currentY,'\\',0x7FFF);
+          break;
+        case 0x5B:
+          putChar(currentX,currentY,']',0x7FFF);
+          break;              
         default:
           break;
       }
