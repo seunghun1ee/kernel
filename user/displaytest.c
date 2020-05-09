@@ -12,5 +12,6 @@ void main_displaytest() {
         write(STDOUT_FILENO, test, 1);
         write(STDOUT_FILENO, " ", 1);
     }
+    write(STDOUT_FILENO, "\nDONE\n", 6);
     exit(EXIT_SUCCESS);
 }
