@@ -49,7 +49,7 @@ void main_dining_pipe() {
         itoa(ph_index, ph.index);
         write(STDOUT_FILENO, ph_index, 2);
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, "picked up left\n", 16);
+        write(STDOUT_FILENO, "picked up left\n", 15);
         
         while(read(ph.right_read, "wait", 1) == 0) {
             //wait
@@ -57,13 +57,13 @@ void main_dining_pipe() {
         itoa(ph_index, ph.index);
         write(STDOUT_FILENO, ph_index, 2);
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, "picked up right\n", 17);
+        write(STDOUT_FILENO, "picked up right\n", 16);
         
         ph.state = EATING;
         itoa(ph_index, ph.index);
         write(STDOUT_FILENO, ph_index, 2);
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, "is eating\n", 11);
+        write(STDOUT_FILENO, "is eating\n", 10);
         for(int y=0; y < 10; y++) {
             for( uint32_t x = lo; x < hi; x++ ) {
                 int r = is_prime( x );   
@@ -72,17 +72,17 @@ void main_dining_pipe() {
         itoa(ph_index, ph.index);
         write(STDOUT_FILENO, ph_index, 2);
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, "done\n", 6);
+        write(STDOUT_FILENO, "done\n", 5);
         
         int right_err = write(ph.right_write, "a", 1);
         if(right_err == 0) {
-            write(STDOUT_FILENO, "drop right error ",18);
+            write(STDOUT_FILENO, "drop right error ",17);
             exit(EXIT_SUCCESS);
         }
         //write(STDOUT_FILENO, "drop right ", 12);
         int left_err = write(ph.left_write, "a", 1);
         if(left_err == 0) {
-            write(STDOUT_FILENO, "drop left error ",17);
+            write(STDOUT_FILENO, "drop left error ",16);
             exit(EXIT_SUCCESS);
         }
         //write(STDOUT_FILENO, "drop left ", 11);
