@@ -671,7 +671,38 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, '>',                      true );
 
     switch (x) {
+      case 0x45:
+        putChar(currentX,currentY,'0',0x7FFF);
+        break;
+      case 0x16:
+        putChar(currentX,currentY,'1',0x7FFF);
+        break;
+      case 0x1E:
+        putChar(currentX,currentY,'2',0x7FFF);
+        break;
+      case 0x26:
+        putChar(currentX,currentY,'3',0x7FFF);
+        break;
+      case 0x25:
+        putChar(currentX,currentY,'4',0x7FFF);
+        break;
+      case 0x2E:
+        putChar(currentX,currentY,'5',0x7FFF);
+        break;
+      case 0x36:
+        putChar(currentX,currentY,'6',0x7FFF);
+        break;
+      case 0x3D:
+        putChar(currentX,currentY,'7',0x7FFF);
+        break;
+      case 0x3E:
+        putChar(currentX,currentY,'8',0x7FFF);
+        break;
+      case 0x46:
+        putChar(currentX,currentY,'9',0x7FFF);
+        break;                  
       case 0x29:
+        //space bar
         updateXY();
         break;
       case 0x1C:
