@@ -296,29 +296,44 @@ uint16_t currentY = 0;
 char **char_set;
 
 
-void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
-  char *bitmap = char_set[character];
-  for(int i = 0; i < 8; i++) {
-    for(int j = 0; j < 8; j++) {
-      switch(bitmap[(j*8)+i]) {
-        case '1': {
-          fb[y+j][x+i] = colour;
-          break;
-        }
-        default: {
-          break;
-        }
-      }
-    }
-  }
-  updateXY();
+void lineFeed() {
+  currentY += 10;
+  currentX = 0;
 }
 
 void updateXY() {
   currentX += 8;
   if(currentX == 800) {
-    currentY += 10;
-    currentX = 0;
+    lineFeed();
+  }
+}
+
+void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
+  char *bitmap = char_set[character];
+  switch (character) {
+    case '\0':
+      break;
+
+    case '\n':
+      lineFeed();
+      break;
+  
+    default:
+      for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+          switch(bitmap[(j*8)+i]) {
+            case '1': {
+              fb[y+j][x+i] = colour;
+              break;
+            }
+            default: {
+              break;
+            }
+          }
+        }
+      }
+      updateXY();
+      break;
   }
 }
 
@@ -332,7 +347,11 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
   switch (fdIndex) {
     case 0 ... 2:
       for(int i = 0; i < n; i++ ) {
-        putChar(currentX, currentY, *x, 0x7FFF);
+        char a = *x;
+        if(a > 'Z') {
+          a -= 32;
+        }
+        putChar(currentX, currentY, a, 0x7FFF);
         PL011_putc( UART1, *x++, true );
         success++;
       }
