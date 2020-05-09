@@ -110,7 +110,7 @@ void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
     stack[ i ].taken = false;
-    stack[ i ].tos = &tos_proc - (i * STACK_SIZE);
+    stack[ i ].tos = (uint32_t) &tos_proc - (i * STACK_SIZE);
   }
   //initialise console
 /* 
@@ -148,7 +148,7 @@ void initPipes() {
     pipes[i].write_end = -1;
     pipes[i].taken = false;
     for(int j = 0; j < QUEUE_LEN; j++) {
-      pipes[i].queue[j] = NULL;
+      pipes[i].queue[j] = '\0';
     }
     pipes[i].front = -1;
     pipes[i].back = -1;
@@ -246,7 +246,7 @@ void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
 //https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
 
 int push(int index, char item) {
-  if(item == NULL) {
+  if(item == '\0') {
     return 0;  //null char ignored
   }
   if(pipes[index].itemCount < pipes[index].length) {
@@ -277,7 +277,7 @@ int push(int index, char item) {
 char pop(int index) {
   if(pipes[index].itemCount > 0) {
     char item = pipes[index].queue[pipes[index].front];
-    if(item == NULL) {
+    if(item == '\0') {
       return 0; //ignore null char
     }
 
@@ -418,8 +418,8 @@ void hilevel_fork(ctx_t *ctx) {
   procTab[childProcTabIndex].parent = parentPid;
   procTab[childProcTabIndex].tos = (uint32_t) stack[childStackIndex].tos;
 
-  memcpy((uint32_t) stack[ childStackIndex ].tos - STACK_SIZE, (uint32_t) stack[ parentStackIndex ].tos - STACK_SIZE, STACK_SIZE);
-  memcpy((uint32_t) &procTab[ childProcTabIndex ].ctx, ctx, sizeof(ctx_t));
+  memcpy((void *) stack[ childStackIndex ].tos - STACK_SIZE, (const void *) stack[ parentStackIndex ].tos - STACK_SIZE, STACK_SIZE);
+  memcpy((void *) &procTab[ childProcTabIndex ].ctx, (const void *) ctx, sizeof(ctx_t));
 
   
   uint32_t sp_offset = (uint32_t) procTab[ parentProcTabIndex ].tos - ctx->sp;
@@ -427,7 +427,7 @@ void hilevel_fork(ctx_t *ctx) {
   ctx->gpr[ 0 ] = childPid;
   procTab[ childProcTabIndex ].ctx.gpr[ 0 ] = 0;
   
-
+  //
 }
 
 void hilevel_exit(ctx_t *ctx, int exit_status) {
@@ -881,30 +881,30 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case SYS_EXIT : { //0x04 => exit( x )
-      int x = (uint32_t) ctx->gpr[ 0 ];
+      int x = (int) ctx->gpr[ 0 ];
       hilevel_exit(ctx, x);
       PL011_putc( UART0, 'E', true );
       break;
     }
 
     case SYS_EXEC : { //0x05 => exec( x )
-      void *x = (uint32_t) ctx->gpr[ 0 ];
+      void *x = (void *) ctx->gpr[ 0 ];
       hilevel_exec(ctx, x);
       PL011_putc( UART0, 'X', true );
       break;
     }
 
     case SYS_KILL : { //0x06 => kill( pid, x )
-      int pid = (uint32_t) ctx->gpr[ 0 ];
-      int x   = (uint32_t) ctx->gpr[ 1 ];
+      int pid = (int) ctx->gpr[ 0 ];
+      int x   = (int) ctx->gpr[ 1 ];
       hilevel_kill(ctx, pid, x);
       PL011_putc( UART0, 'K', true );
       break;
     }
 
     case SYS_NICE : { //0x07 => nice( pid, x )
-      int pid = (uint32_t) ctx->gpr[ 0 ];
-      int32_t x   = (uint32_t) ctx->gpr[ 1 ];
+      int pid = (int) ctx->gpr[ 0 ];
+      int32_t x   = (int32_t) ctx->gpr[ 1 ];
       hilevel_nice(pid, x);
       PL011_putc( UART0, 'N', true);
       break;
