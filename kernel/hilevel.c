@@ -684,6 +684,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
   return;
 }
 
+uint8_t prev_ps20_id = 0x0;
+
 void hilevel_handler_irq(ctx_t* ctx) {
   // Step 2: read  the interrupt identifier so we know the source.
 
@@ -700,6 +702,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
     UART1->ICR = 0x10;
   }
   else if     ( id == GIC_SOURCE_PS20 ) {
+    
     uint8_t x = PL050_getc( PS20 );
 
     PL011_putc( UART0, '0',                      true );  
@@ -707,123 +710,126 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
     PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
     PL011_putc( UART0, '>',                      true );
-
-    switch (x) {
-      case 0x45:
-        putChar(currentX,currentY,'0',0x7FFF);
-        break;
-      case 0x16:
-        putChar(currentX,currentY,'1',0x7FFF);
-        break;
-      case 0x1E:
-        putChar(currentX,currentY,'2',0x7FFF);
-        break;
-      case 0x26:
-        putChar(currentX,currentY,'3',0x7FFF);
-        break;
-      case 0x25:
-        putChar(currentX,currentY,'4',0x7FFF);
-        break;
-      case 0x2E:
-        putChar(currentX,currentY,'5',0x7FFF);
-        break;
-      case 0x36:
-        putChar(currentX,currentY,'6',0x7FFF);
-        break;
-      case 0x3D:
-        putChar(currentX,currentY,'7',0x7FFF);
-        break;
-      case 0x3E:
-        putChar(currentX,currentY,'8',0x7FFF);
-        break;
-      case 0x46:
-        putChar(currentX,currentY,'9',0x7FFF);
-        break;                  
-      case 0x29:
-        //space bar
-        updateXY();
-        break;
-      case 0x1C:
-        putChar(currentX,currentY,'A',0x7FFF);
-        break;
-      case 0x32:
-        putChar(currentX,currentY,'B',0x7FFF);
-        break;
-      case 0x21:
-        putChar(currentX,currentY,'C',0x7FFF);  
-        break;
-      case 0x23:
-        putChar(currentX,currentY,'D',0x7FFF);
-        break;
-      case 0x24:
-        putChar(currentX,currentY,'E',0x7FFF);
-        break;
-      case 0x2B:
-        putChar(currentX,currentY,'F',0x7FFF);
-        break;
-      case 0x34:
-        putChar(currentX,currentY,'G',0x7FFF);
-        break;
-      case 0x33:
-        putChar(currentX,currentY,'H',0x7FFF);
-        break;        
-      case 0x43:
-        putChar(currentX,currentY,'I',0x7FFF);
-        break;
-      case 0x3B:
-        putChar(currentX,currentY,'J',0x7FFF);
-        break;
-      case 0x42:
-        putChar(currentX,currentY,'K',0x7FFF);
-        break;
-      case 0x4B:
-        putChar(currentX,currentY,'L',0x7FFF);
-        break;
-      case 0x3A:
-        putChar(currentX,currentY,'M',0x7FFF);
-        break;
-      case 0x31:
-        putChar(currentX,currentY,'N',0x7FFF);
-        break;
-      case 0x44:
-        putChar(currentX,currentY,'O',0x7FFF);
-        break;
-      case 0x4D:
-        putChar(currentX,currentY,'P',0x7FFF);
-        break;
-      case 0x15:
-        putChar(currentX,currentY,'Q',0x7FFF);
-        break;
-      case 0x2D:
-        putChar(currentX,currentY,'R',0x7FFF);
-        break;
-      case 0x1B:
-        putChar(currentX,currentY,'S',0x7FFF);
-        break;
-      case 0x2C:
-        putChar(currentX,currentY,'T',0x7FFF);
-        break;
-      case 0x3C:
-        putChar(currentX,currentY,'U',0x7FFF);
-        break;
-      case 0x2A:
-        putChar(currentX,currentY,'V',0x7FFF);
-        break;
-      case 0x1D:
-        putChar(currentX,currentY,'W',0x7FFF);
-        break;
-      case 0x22:
-        putChar(currentX,currentY,'X',0x7FFF);
-        break;
-      case 0x35:
-        putChar(currentX,currentY,'Y',0x7FFF);
-        break;
-      case 0x1A:
-        putChar(currentX,currentY,'Z',0x7FFF);
-        break;    
-      default:
-        break;
+    if(prev_ps20_id != 0xF0) {
+      switch (x) {
+        case 0x29:
+          //space bar
+          updateXY();
+          break;
+        case 0x45:
+          putChar(currentX,currentY,'0',0x7FFF);
+          break;
+        case 0x16:
+          putChar(currentX,currentY,'1',0x7FFF);
+          break;
+        case 0x1E:
+          putChar(currentX,currentY,'2',0x7FFF);
+          break;
+        case 0x26:
+          putChar(currentX,currentY,'3',0x7FFF);
+          break;
+        case 0x25:
+          putChar(currentX,currentY,'4',0x7FFF);
+          break;
+        case 0x2E:
+          putChar(currentX,currentY,'5',0x7FFF);
+          break;
+        case 0x36:
+          putChar(currentX,currentY,'6',0x7FFF);
+          break;
+        case 0x3D:
+          putChar(currentX,currentY,'7',0x7FFF);
+          break;
+        case 0x3E:
+          putChar(currentX,currentY,'8',0x7FFF);
+          break;
+        case 0x46:
+          putChar(currentX,currentY,'9',0x7FFF);
+          break;                  
+        case 0x1C:
+          putChar(currentX,currentY,'A',0x7FFF);
+          break;
+        case 0x32:
+          putChar(currentX,currentY,'B',0x7FFF);
+          break;
+        case 0x21:
+          putChar(currentX,currentY,'C',0x7FFF);  
+          break;
+        case 0x23:
+          putChar(currentX,currentY,'D',0x7FFF);
+          break;
+        case 0x24:
+          putChar(currentX,currentY,'E',0x7FFF);
+          break;
+        case 0x2B:
+          putChar(currentX,currentY,'F',0x7FFF);
+          break;
+        case 0x34:
+          putChar(currentX,currentY,'G',0x7FFF);
+          break;
+        case 0x33:
+          putChar(currentX,currentY,'H',0x7FFF);
+          break;        
+        case 0x43:
+          putChar(currentX,currentY,'I',0x7FFF);
+          break;
+        case 0x3B:
+          putChar(currentX,currentY,'J',0x7FFF);
+          break;
+        case 0x42:
+          putChar(currentX,currentY,'K',0x7FFF);
+          break;
+        case 0x4B:
+          putChar(currentX,currentY,'L',0x7FFF);
+          break;
+        case 0x3A:
+          putChar(currentX,currentY,'M',0x7FFF);
+          break;
+        case 0x31:
+          putChar(currentX,currentY,'N',0x7FFF);
+          break;
+        case 0x44:
+          putChar(currentX,currentY,'O',0x7FFF);
+          break;
+        case 0x4D:
+          putChar(currentX,currentY,'P',0x7FFF);
+          break;
+        case 0x15:
+          putChar(currentX,currentY,'Q',0x7FFF);
+          break;
+        case 0x2D:
+          putChar(currentX,currentY,'R',0x7FFF);
+          break;
+        case 0x1B:
+          putChar(currentX,currentY,'S',0x7FFF);
+          break;
+        case 0x2C:
+          putChar(currentX,currentY,'T',0x7FFF);
+          break;
+        case 0x3C:
+          putChar(currentX,currentY,'U',0x7FFF);
+          break;
+        case 0x2A:
+          putChar(currentX,currentY,'V',0x7FFF);
+          break;
+        case 0x1D:
+          putChar(currentX,currentY,'W',0x7FFF);
+          break;
+        case 0x22:
+          putChar(currentX,currentY,'X',0x7FFF);
+          break;
+        case 0x35:
+          putChar(currentX,currentY,'Y',0x7FFF);
+          break;
+        case 0x1A:
+          putChar(currentX,currentY,'Z',0x7FFF);
+          break;    
+        default:
+          break;
+      }
     }
+    
+    prev_ps20_id = x;
     
   }
   else if( id == GIC_SOURCE_PS21 ) {
