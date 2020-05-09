@@ -348,7 +348,7 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
     case 0 ... 2:
       for(int i = 0; i < n; i++ ) {
         char a = *x;
-        if(a > 'Z') {
+        if(a >= 'a' || a <= 'z') {
           a -= 32;
         }
         putChar(currentX, currentY, a, 0x7FFF);
