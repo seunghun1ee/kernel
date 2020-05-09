@@ -479,6 +479,8 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
 uint16_t fb[ 600 ][ 800 ];
 uint16_t currentX = 0;
 uint16_t currentY = 0;
+char **char_set;
+
 
 void convertFromBitmap(uint16_t x, uint16_t y, char* bitmap, uint16_t colour) {
   for(int i = 0; i < 8; i++) {
@@ -496,7 +498,8 @@ void convertFromBitmap(uint16_t x, uint16_t y, char* bitmap, uint16_t colour) {
   }
 }
 
-void putChar(uint16_t x, uint16_t y, char* bitmap, uint16_t colour) {
+void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
+  char *bitmap = char_set[character];
   for(int i = 0; i < 8; i++) {
     for(int j = 0; j < 8; j++) {
       switch(bitmap[(j*8)+i]) {
@@ -612,6 +615,33 @@ void hilevel_handler_rst(ctx_t* ctx) {
     }
   }
 
+  char_set['A'] = "0111000010001000100010001111100010001000100010001000100010001000"; //A
+  char_set['B'] = "1111000010001000100010001111000010001000100010001000100011110000"; //B
+  char_set['C'] = "0111000010001000100000001000000010000000100000001000100001110000"; //C
+  char_set['D'] = "1111000010001000100010001000100010001000100010001000100011110000"; //D
+  char_set['E'] = "1111100010000000100000001111000010000000100000001000000011111000"; //E
+  char_set['F'] = "1111100010000000100000001111000010000000100000001000000010000000"; //F
+  char_set['G'] = "0111000010001000100000001000000010011000100010001000100001110000"; //G
+  char_set['H'] = "1000100010001000100010001111100010001000100010001000100010001000"; //H
+  char_set['I'] = "0111000000100000001000000010000000100000001000000010000001110000"; //I
+  char_set['J'] = "0000100000001000000010000000100000001000000010001000100001110000"; //J
+  char_set['K'] = "1000100010001000100100001110000010010000100010001000100010001000"; //K
+  char_set['L'] = "1000000010000000100000001000000010000000100000001000000011111000"; //L
+  char_set['M'] = "1000100011011000101010001000100010001000100010001000100010001000"; //M
+  char_set['N'] = "1000100010001000100010001100100010101000100110001000100010001000"; //N
+  char_set['O'] = "0111000010001000100010001000100010001000100010001000100001110000"; //O
+  char_set['P'] = "1111000010001000100010001111000010000000100000001000000010000000"; //P
+  char_set['Q'] = "0111000010001000100010001000100010001000101010001001000001101000"; //Q
+  char_set['R'] = "1111000010001000100010001111000010001000100010001000100010001000"; //R
+  char_set['S'] = "0111100010000000100000000111000000001000000010000000100011110000"; //S
+  char_set['T'] = "1111100000100000001000000010000000100000001000000010000000100000"; //T
+  char_set['U'] = "1000100010001000100010001000100010001000100010001000100001110000"; //U
+  char_set['V'] = "1000100010001000100010001000100010001000100010000101000000100000"; //V
+  char_set['W'] = "1000100010001000100010001000100010001000101010001101100010001000"; //W
+  char_set['X'] = "1000100010001000010100000010000001010000100010001000100010001000"; //X
+  char_set['Y'] = "1000100010001000100010000101000000100000001000000010000000100000"; //Y
+  char_set['Z'] = "1111100000001000000100000010000001000000100000001000000011111000"; //Z
+
   return;
 }
 
@@ -640,13 +670,87 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, '>',                      true );
 
     switch (x) {
+      case 0x29:
+        updateXY();
+        break;
       case 0x1C:
-        putA(currentX,currentY,0x7FFF);
+        putChar(currentX,currentY,'A',0x7FFF);
         break;
       case 0x32:
-        putB(currentX, currentY,0x7FFF);
+        putChar(currentX,currentY,'B',0x7FFF);
         break;
-    
+      case 0x21:
+        putChar(currentX,currentY,'C',0x7FFF);  
+        break;
+      case 0x23:
+        putChar(currentX,currentY,'D',0x7FFF);
+        break;
+      case 0x24:
+        putChar(currentX,currentY,'E',0x7FFF);
+        break;
+      case 0x2B:
+        putChar(currentX,currentY,'F',0x7FFF);
+        break;
+      case 0x34:
+        putChar(currentX,currentY,'G',0x7FFF);
+        break;
+      case 0x33:
+        putChar(currentX,currentY,'H',0x7FFF);
+        break;        
+      case 0x43:
+        putChar(currentX,currentY,'I',0x7FFF);
+        break;
+      case 0x3B:
+        putChar(currentX,currentY,'J',0x7FFF);
+        break;
+      case 0x42:
+        putChar(currentX,currentY,'K',0x7FFF);
+        break;
+      case 0x4B:
+        putChar(currentX,currentY,'L',0x7FFF);
+        break;
+      case 0x3A:
+        putChar(currentX,currentY,'M',0x7FFF);
+        break;
+      case 0x31:
+        putChar(currentX,currentY,'N',0x7FFF);
+        break;
+      case 0x44:
+        putChar(currentX,currentY,'O',0x7FFF);
+        break;
+      case 0x4D:
+        putChar(currentX,currentY,'P',0x7FFF);
+        break;
+      case 0x15:
+        putChar(currentX,currentY,'Q',0x7FFF);
+        break;
+      case 0x2D:
+        putChar(currentX,currentY,'R',0x7FFF);
+        break;
+      case 0x1B:
+        putChar(currentX,currentY,'S',0x7FFF);
+        break;
+      case 0x2C:
+        putChar(currentX,currentY,'T',0x7FFF);
+        break;
+      case 0x3C:
+        putChar(currentX,currentY,'U',0x7FFF);
+        break;
+      case 0x2A:
+        putChar(currentX,currentY,'V',0x7FFF);
+        break;
+      case 0x1D:
+        putChar(currentX,currentY,'W',0x7FFF);
+        break;
+      case 0x22:
+        putChar(currentX,currentY,'X',0x7FFF);
+        break;
+      case 0x35:
+        putChar(currentX,currentY,'Y',0x7FFF);
+        break;
+      case 0x1A:
+        putChar(currentX,currentY,'Z',0x7FFF);
+        break;    
       default:
         break;
     }
