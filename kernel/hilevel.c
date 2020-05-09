@@ -429,6 +429,12 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   int parentProcTabIndex = getIndexOfProcTable(procTab[procTabIndex].parent);
   procTab[ procTabIndex ].status = STATUS_TERMINATED;
   stack[ stackIndex ].taken = false;
+
+  for(int i = 0; i < MAX_PROCS; i++) {
+    if(procTab[ i ].parent == pid ) {
+      hilevel_kill(ctx, procTab[i].pid, signal);
+    }
+  }
   updateCapnAndReadyIndex();
   schedule(ctx);
 }
