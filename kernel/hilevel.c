@@ -24,6 +24,17 @@ uint32_t capn = MAX_PROCS;  //capn = current available process number
 pipe_t pipes[MAX_PIPES];
 file_descriptor_t fd[50];
 
+extern void     main_console();
+extern uint32_t tos_svc;
+extern uint32_t tos_proc;
+
+uint16_t fb[ 600 ][ 800 ];
+uint16_t currentX = 0;
+uint16_t currentY = 0;
+char **char_set;
+uint8_t prev_ps20_id = 0x0;
+bool shift_key = false;
+
 void updateCapnAndReadyIndex() {
   int loadedP = 0;
   int j = 0;
@@ -99,10 +110,6 @@ void schedule( ctx_t* ctx ) {
   return;
 }
 
-extern void     main_console();
-extern uint32_t tos_svc;
-extern uint32_t tos_proc;
-
 /* Invalidate all entries in the process table, so it's clear they are not
  * representing valid (i.e., active) processes.
  */
@@ -154,6 +161,14 @@ void initPipes() {
     pipes[i].back = -1;
     pipes[i].itemCount = 0;
     pipes[i].length = QUEUE_LEN;
+  }
+}
+
+void initDisplay() {
+  for( int i = 0; i < 600; i++ ) {
+    for( int j = 0; j < 800; j++ ) {
+      fb[ i ][ j ] = 0x0;
+    }
   }
 }
 
@@ -289,12 +304,6 @@ char pop(int index) {
   //queue is empty
   return 0;
 }
-
-uint16_t fb[ 600 ][ 800 ];
-uint16_t currentX = 0;
-uint16_t currentY = 0;
-char **char_set;
-
 
 void lineFeed() {
   currentY += 10;
@@ -590,7 +599,288 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
   ctx->gpr[ 3 ] = 0;
 }
 
+void keyboard_behaviour_0(uint8_t id) {
+  switch (id) {
+    case 0x29:
+      //space bar
+      updateXY(OP_ADD);
+      break;
+    case 0x66:
+      //backspace
+      updateXY(OP_SUB);
+      break;
+    case 0x5A:
+      //enter key
+      lineFeed();
+      break;
+    case 0x12:
+    case 0x59:
+      if(shift_key) {
+        shift_key = false;
+      }
+      else
+      {
+        shift_key = true;
+      }
+      break;
+    case 0x5D:
+      if(shift_key) {
+        putChar(currentX,currentY,'~',0x7FFF);  
+      }
+      else {
+        putChar(currentX,currentY,'#',0x7FFF);
+      }
+      break;
+    case 0x52:
+      if(shift_key) {
+        putChar(currentX,currentY,'@',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'\'',0x7FFF);
+      }
+      break;
+    case 0x41:
+      if(shift_key) {
+        putChar(currentX,currentY,'<',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,',',0x7FFF);
+      }
+      break;
+    case 0x4E:
+      if(shift_key) {
+        putChar(currentX,currentY,'_',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'-',0x7FFF);
+      }
+      break;
+    case 0x49:
+      if(shift_key) {
+        putChar(currentX,currentY,'>',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'.',0x7FFF);
+      }
+      break;
+    case 0x4A:
+      if(shift_key) {
+        putChar(currentX,currentY,'?',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'/',0x7FFF);
+      }
+      break;
 
+    case 0x45:
+      if(shift_key) {
+        putChar(currentX,currentY,')',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'0',0x7FFF);
+      }
+      break;
+    case 0x16:
+      if(shift_key) {
+        putChar(currentX,currentY,'!',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'1',0x7FFF);
+      }
+      break;
+    case 0x1E:
+      if(shift_key) {
+        putChar(currentX,currentY,'\"',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'2',0x7FFF);
+      }
+      break;
+    case 0x26:
+      if(shift_key) {
+        putChar(currentX,currentY,(unsigned char) 156,0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'3',0x7FFF);
+      }
+      break;
+    case 0x25:
+      if(shift_key) {
+        putChar(currentX,currentY,'$',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'4',0x7FFF);
+      }
+      break;
+    case 0x2E:
+      if(shift_key) {
+        putChar(currentX,currentY,'%',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'5',0x7FFF);
+      }
+      break;
+    case 0x36:
+      if(shift_key) {
+        putChar(currentX,currentY,'^',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'6',0x7FFF);
+      }
+      break;
+    case 0x3D:
+      if(shift_key) {
+        putChar(currentX,currentY,'&',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'7',0x7FFF);
+      }
+      break;
+    case 0x3E:
+      if(shift_key) {
+        putChar(currentX,currentY,'*',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'8',0x7FFF);
+      }
+      break;
+    case 0x46:
+      if(shift_key) {
+        putChar(currentX,currentY,'(',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'9',0x7FFF);
+      }
+      break;
+    case 0x4C:
+      if(shift_key) {
+        putChar(currentX,currentY,':',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,';',0x7FFF);
+      }
+      break;                    
+    case 0x1C:
+      putChar(currentX,currentY,'A',0x7FFF);
+      break;
+    case 0x32:
+      putChar(currentX,currentY,'B',0x7FFF);
+      break;
+    case 0x21:
+      putChar(currentX,currentY,'C',0x7FFF);  
+      break;
+    case 0x23:
+      putChar(currentX,currentY,'D',0x7FFF);
+      break;
+    case 0x24:
+      putChar(currentX,currentY,'E',0x7FFF);
+      break;
+    case 0x2B:
+      putChar(currentX,currentY,'F',0x7FFF);
+      break;
+    case 0x34:
+      putChar(currentX,currentY,'G',0x7FFF);
+      break;
+    case 0x33:
+      putChar(currentX,currentY,'H',0x7FFF);
+      break;        
+    case 0x43:
+      putChar(currentX,currentY,'I',0x7FFF);
+      break;
+    case 0x3B:
+      putChar(currentX,currentY,'J',0x7FFF);
+      break;
+    case 0x42:
+      putChar(currentX,currentY,'K',0x7FFF);
+      break;
+    case 0x4B:
+      putChar(currentX,currentY,'L',0x7FFF);
+      break;
+    case 0x3A:
+      putChar(currentX,currentY,'M',0x7FFF);
+      break;
+    case 0x31:
+      putChar(currentX,currentY,'N',0x7FFF);
+      break;
+    case 0x44:
+      putChar(currentX,currentY,'O',0x7FFF);
+      break;
+    case 0x4D:
+      putChar(currentX,currentY,'P',0x7FFF);
+      break;
+    case 0x15:
+      putChar(currentX,currentY,'Q',0x7FFF);
+      break;
+    case 0x2D:
+      putChar(currentX,currentY,'R',0x7FFF);
+      break;
+    case 0x1B:
+      putChar(currentX,currentY,'S',0x7FFF);
+      break;
+    case 0x2C:
+      putChar(currentX,currentY,'T',0x7FFF);
+      break;
+    case 0x3C:
+      putChar(currentX,currentY,'U',0x7FFF);
+      break;
+    case 0x2A:
+      putChar(currentX,currentY,'V',0x7FFF);
+      break;
+    case 0x1D:
+      putChar(currentX,currentY,'W',0x7FFF);
+      break;
+    case 0x22:
+      putChar(currentX,currentY,'X',0x7FFF);
+      break;
+    case 0x35:
+      putChar(currentX,currentY,'Y',0x7FFF);
+      break;
+    case 0x1A:
+      putChar(currentX,currentY,'Z',0x7FFF);
+      break;
+    case 0x55:
+      if(shift_key) {
+        putChar(currentX,currentY,'+',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'=',0x7FFF);
+      }
+      break;
+    case 0x54:
+      if(shift_key) {
+        putChar(currentX,currentY,'{',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'[',0x7FFF);
+      }
+      break;
+    case 0x61:
+      if(shift_key) {
+        putChar(currentX,currentY,'|',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'\\',0x7FFF);
+      }
+      break;
+    case 0x5B:
+      if(shift_key) {
+        putChar(currentX,currentY,'}',0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,']',0x7FFF);
+      }
+      break;
+    case 0x0E:
+      if(shift_key) {
+        putChar(currentX,currentY,(unsigned char) 170,0x7FFF);
+      }
+      else {
+        putChar(currentX,currentY,'`',0x7FFF);
+      }                
+    default:
+      break;
+  }
+}
 
 void hilevel_handler_rst(ctx_t* ctx) {
   PL011_putc(UART0, 'R', true);
@@ -665,12 +955,8 @@ void hilevel_handler_rst(ctx_t* ctx) {
 
   // Write example red/green/blue test pattern into the frame buffer.
 
-  for( int i = 0; i < 600; i++ ) {
-    for( int j = 0; j < 800; j++ ) {
-      //fb[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
-      fb[ i ][ j ] = 0x0;
-    }
-  }
+  initDisplay();
+
   char_set['\0'] = "0000000000000000000000000000000000000000000000000000000000000000";
 
   char_set['!'] = "0010000000100000001000000010000000100000001000000000000000100000";
@@ -736,7 +1022,7 @@ void hilevel_handler_rst(ctx_t* ctx) {
   char_set[']'] = "0110000000100000001000000010000000100000001000000010000001100000";
   char_set['^'] = "0010000001010000100010000000000000000000000000000000000000000000";
   char_set['_'] = "0000000000000000000000000000000000000000000000000000000011111000";
-  char_set[96] = "0010000000100000000000000000000000000000000000000000000000000000";  //ascii 96 Grave accent replaced with ascii 39 Apostrophe
+  char_set['`'] = "0010000000100000000000000000000000000000000000000000000000000000";  //ascii 96 Grave accent replaced with ascii 39 Apostrophe
   //ascii 97 - 122  lower case section
   char_set['{'] = "0010000001000000010000001000000001000000010000000100000000100000";
   char_set['|'] = "0010000000100000001000000010000000100000001000000010000000100000";
@@ -749,8 +1035,6 @@ void hilevel_handler_rst(ctx_t* ctx) {
 
   return;
 }
-
-uint8_t prev_ps20_id = 0x0;
 
 void hilevel_handler_irq(ctx_t* ctx) {
   // Step 2: read  the interrupt identifier so we know the source.
@@ -776,165 +1060,9 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
     PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
     PL011_putc( UART0, '>',                      true );
-    if(prev_ps20_id != 0xF0) {
-      switch (x) {
-        case 0x29:
-          //space bar
-          updateXY(OP_ADD);
-          break;
-        case 0x66:
-          //backspace
-          updateXY(OP_SUB);
-          break;
-        case 0x5A:
-          //enter key
-          lineFeed();
-          break;  
-        case 0x5D:
-          putChar(currentX,currentY,'#',0x7FFF);
-          break;
-        case 0x52:
-          putChar(currentX,currentY,'\'',0x7FFF);
-          break;
-        case 0x41:
-          putChar(currentX,currentY,',',0x7FFF);
-          break;
-        case 0x4E:
-          putChar(currentX,currentY,'-',0x7FFF);
-          break;
-        case 0x49:
-          putChar(currentX,currentY,'.',0x7FFF);
-          break;
-        case 0x4A:
-          putChar(currentX,currentY,'/',0x7FFF);
-          break;
 
-        case 0x45:
-          putChar(currentX,currentY,'0',0x7FFF);
-          break;
-        case 0x16:
-          putChar(currentX,currentY,'1',0x7FFF);
-          break;
-        case 0x1E:
-          putChar(currentX,currentY,'2',0x7FFF);
-          break;
-        case 0x26:
-          putChar(currentX,currentY,'3',0x7FFF);
-          break;
-        case 0x25:
-          putChar(currentX,currentY,'4',0x7FFF);
-          break;
-        case 0x2E:
-          putChar(currentX,currentY,'5',0x7FFF);
-          break;
-        case 0x36:
-          putChar(currentX,currentY,'6',0x7FFF);
-          break;
-        case 0x3D:
-          putChar(currentX,currentY,'7',0x7FFF);
-          break;
-        case 0x3E:
-          putChar(currentX,currentY,'8',0x7FFF);
-          break;
-        case 0x46:
-          putChar(currentX,currentY,'9',0x7FFF);
-          break;
-        case 0x4C:
-          putChar(currentX,currentY,';',0x7FFF);
-          break;                    
-        case 0x1C:
-          putChar(currentX,currentY,'A',0x7FFF);
-          break;
-        case 0x32:
-          putChar(currentX,currentY,'B',0x7FFF);
-          break;
-        case 0x21:
-          putChar(currentX,currentY,'C',0x7FFF);  
-          break;
-        case 0x23:
-          putChar(currentX,currentY,'D',0x7FFF);
-          break;
-        case 0x24:
-          putChar(currentX,currentY,'E',0x7FFF);
-          break;
-        case 0x2B:
-          putChar(currentX,currentY,'F',0x7FFF);
-          break;
-        case 0x34:
-          putChar(currentX,currentY,'G',0x7FFF);
-          break;
-        case 0x33:
-          putChar(currentX,currentY,'H',0x7FFF);
-          break;        
-        case 0x43:
-          putChar(currentX,currentY,'I',0x7FFF);
-          break;
-        case 0x3B:
-          putChar(currentX,currentY,'J',0x7FFF);
-          break;
-        case 0x42:
-          putChar(currentX,currentY,'K',0x7FFF);
-          break;
-        case 0x4B:
-          putChar(currentX,currentY,'L',0x7FFF);
-          break;
-        case 0x3A:
-          putChar(currentX,currentY,'M',0x7FFF);
-          break;
-        case 0x31:
-          putChar(currentX,currentY,'N',0x7FFF);
-          break;
-        case 0x44:
-          putChar(currentX,currentY,'O',0x7FFF);
-          break;
-        case 0x4D:
-          putChar(currentX,currentY,'P',0x7FFF);
-          break;
-        case 0x15:
-          putChar(currentX,currentY,'Q',0x7FFF);
-          break;
-        case 0x2D:
-          putChar(currentX,currentY,'R',0x7FFF);
-          break;
-        case 0x1B:
-          putChar(currentX,currentY,'S',0x7FFF);
-          break;
-        case 0x2C:
-          putChar(currentX,currentY,'T',0x7FFF);
-          break;
-        case 0x3C:
-          putChar(currentX,currentY,'U',0x7FFF);
-          break;
-        case 0x2A:
-          putChar(currentX,currentY,'V',0x7FFF);
-          break;
-        case 0x1D:
-          putChar(currentX,currentY,'W',0x7FFF);
-          break;
-        case 0x22:
-          putChar(currentX,currentY,'X',0x7FFF);
-          break;
-        case 0x35:
-          putChar(currentX,currentY,'Y',0x7FFF);
-          break;
-        case 0x1A:
-          putChar(currentX,currentY,'Z',0x7FFF);
-          break;
-        case 0x55:
-          putChar(currentX,currentY,'=',0x7FFF);
-          break;
-        case 0x54:
-          putChar(currentX,currentY,'[',0x7FFF);
-          break;
-        case 0x61:
-          putChar(currentX,currentY,'\\',0x7FFF);
-          break;
-        case 0x5B:
-          putChar(currentX,currentY,']',0x7FFF);
-          break;              
-        default:
-          break;
-      }
+    if(prev_ps20_id != 0xF0) {
+      keyboard_behaviour_0(x);
     }
     prev_ps20_id = x;
     
