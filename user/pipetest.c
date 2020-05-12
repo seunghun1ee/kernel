@@ -9,7 +9,9 @@ int pipefd[2];
 void main_pipetest() {
 
     char *input = "hello";
+    write(STDOUT_FILENO, "Test input: ", 12);
     read(STDIN_FILENO, input, 5);
+    write(STDOUT_FILENO, "\n", 1);
     write(STDOUT_FILENO, input, 5);
     write(STDERR_FILENO, "error? ", 8);
 

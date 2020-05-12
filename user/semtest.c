@@ -12,7 +12,7 @@ void main_semtest() {
     //sem_init(&test_lock, 1);
     int init_err = sem_init(&test_lock, 1);
     if(init_err != 0) {
-        write(STDOUT_FILENO, "init error, sem is already initialised ", 40);
+        write(STDOUT_FILENO, "init error, sem is already initialised\n", 39);
         exit(EXIT_SUCCESS);
     }
 
@@ -22,15 +22,15 @@ void main_semtest() {
         if(pid == 0) {
             int wait_err = sem_wait(&test_lock);
             if(wait_err != 0) {
-                write(STDOUT_FILENO, "wait error, sem is closed ", 27);
+                write(STDOUT_FILENO, "wait error, sem is closed\n", 26);
                 exit(EXIT_SUCCESS);
                 
             }
             s = 0;
-            write(STDOUT_FILENO, "child", 6);
+            write(STDOUT_FILENO, "child\n", 6);
             int post_err = sem_post(&test_lock);
             if(post_err != 0) {
-                write(STDOUT_FILENO, "post error, sem is closed ", 27);
+                write(STDOUT_FILENO, "post error, sem is closed\n", 26);
                 exit(EXIT_SUCCESS);
             }
             //sem_destroy(&test_lock);
@@ -38,24 +38,24 @@ void main_semtest() {
         else {
             int wait_err = sem_wait(&test_lock);
             if(wait_err != 0) {
-                write(STDOUT_FILENO, "wait error, sem is closed ", 27);
+                write(STDOUT_FILENO, "wait error, sem is closed\n", 26);
                 exit(EXIT_SUCCESS);
                 
             }
             s = 1;
-            write(STDOUT_FILENO, "parent", 7);
+            write(STDOUT_FILENO, "parent\n", 7);
             
             sem_destroy(&test_lock);
             int destroy_err = sem_destroy(&test_lock);
             if(destroy_err != 0) {
-                write(STDOUT_FILENO, "destroy error, sem is already destroyed ", 41);
+                write(STDOUT_FILENO, "destroy error, sem is already destroyed\n", 40);
                 exit(EXIT_SUCCESS);
             }
 
             int post_err = sem_post(&test_lock);
             
             if(post_err != 0) {
-                write(STDOUT_FILENO, "post error, sem is closed ", 27);
+                write(STDOUT_FILENO, "post error, sem is closed\n", 26);
                 exit(EXIT_SUCCESS);
             }
             //sem_destroy(&test_lock);
