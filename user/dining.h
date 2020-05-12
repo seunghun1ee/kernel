@@ -14,13 +14,6 @@
 #include "sem.h"
 
 
-
-typedef struct {
-    int state;
-    uint32_t left_address;
-    uint32_t right_address;
-} philosopher_t;
-
 typedef struct {
     int index;
     int state;
@@ -28,13 +21,8 @@ typedef struct {
     int left_write;
     int right_read;
     int right_write;
-} philosopher2_t;
+} philosopher_t;
 
-typedef struct {
-    uint32_t mutex_address;
-    bool left;
-    bool right;
-} spoon_t;
 
 typedef struct {
     bool left;

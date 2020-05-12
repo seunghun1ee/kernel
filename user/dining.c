@@ -13,7 +13,7 @@ void main_dining() {
         write(chopstick[i][1], "a", 1);
     }
 
-    philosopher2_t ph;
+    philosopher_t ph;
     
     ph.state = THINKING;
 
