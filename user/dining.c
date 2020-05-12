@@ -4,7 +4,7 @@
 int chopstick[ph_number][2];  //pipe fds
 chopstick_t taken[ph_number];  //only for initialisation
 
-void main_dining_pipe() {
+void main_dining() {
 
     for(int i = 0; i < ph_number; i++) {
         pipe(chopstick[i]);
