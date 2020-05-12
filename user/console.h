@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "PL011.h"
+#include "PL050.h"
 
 #include "libc.h"
 

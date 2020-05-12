@@ -611,6 +611,8 @@ void keyboard_behaviour_0(uint8_t id) {
       break;
     case 0x5A:
       //enter key
+      PL050_putc(PS20,'\x0A');
+      //UART1->FR = 0x90;
       lineFeed();
       break;
     case 0x12:
@@ -762,6 +764,9 @@ void keyboard_behaviour_0(uint8_t id) {
       break;                    
     case 0x1C:
       putChar(currentX,currentY,'A',0x7FFF);
+      //PL011_putc(UART1, 'A', true);
+      PL050_putc(PS20, (uint8_t) 'A');
+      PL011_putc(UART1, PL050_getc(PS20) & 0xFF, true);
       break;
     case 0x32:
       putChar(currentX,currentY,'B',0x7FFF);
