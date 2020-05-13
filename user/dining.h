@@ -14,18 +14,18 @@
 
 
 typedef struct {
-    int index;
-    int state;
-    int left_read;
-    int left_write;
-    int right_read;
-    int right_write;
+    int index;  //index of philosopher
+    int state;  //state of philosopher
+    int left_read;  //fd of read-end of left pipe (chopstick)
+    int left_write;  //fd of write-end of left pipe (chopstick)
+    int right_read;  //fd of read-end of right pipe (chopstick)
+    int right_write;  //fd of write-end of right pipe (chopstick)
 } philosopher_t;
 
 
 typedef struct {
-    bool left;
-    bool right;
+    bool left;  //boolean field to check if this chopstick is taken as left chopstick
+    bool right; //boolean field to check if this chopstick is taken as right chopstick
 } chopstick_t;
 
 
