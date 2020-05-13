@@ -38,8 +38,9 @@ typedef int pid_t;
 #define SYS_EXEC      ( 0x05 )
 #define SYS_KILL      ( 0x06 )
 #define SYS_NICE      ( 0x07 )
-#define SYS_PIPE      ( 0x08 )
-#define SYS_CLOSE     ( 0x09 )
+#define SYS_BNICE     ( 0x08 )
+#define SYS_PIPE      ( 0x09 )
+#define SYS_CLOSE     ( 0x0A )
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -73,8 +74,10 @@ extern void exec( const void* x );
 
 // for process identified by pid, send signal of x
 extern int  kill( pid_t pid, int x );
-// for process identified by pid, set  priority to x
+// for process identified by pid, set  priority to priority + x
 extern void nice( pid_t pid, int x );
+// for process identified by pid, set  base-priority to x
+extern void bnice( int pid, int x );
 
 // take address of int array, open a pipe and return file descriptors to fd, return 0 on success, otherwise return -1
 extern int pipe(int fd[2]);

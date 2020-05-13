@@ -148,6 +148,17 @@ void nice( int pid, int x ) {
   return;
 }
 
+void bnice( int pid, int x ) {
+  asm volatile( "mov r0, %1 \n" // assign r0 =  pid
+                "mov r1, %2 \n" // assign r1 =    x
+                "svc %0     \n" // make system call SYS_BNICE
+              : 
+              : "I" (SYS_BNICE), "r" (pid), "r" (x)
+              : "r0", "r1" );
+
+  return;
+}
+
 int pipe(int fd[2]) {
   int r;
   

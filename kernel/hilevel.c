@@ -18,23 +18,24 @@
  */
 
 pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
-proc_stack stack[ MAX_PROCS ];
-int readyPcbIndex[ MAX_PROCS ];
-uint32_t capn = MAX_PROCS;  //capn = current available process number
-pipe_t pipes[MAX_PIPES];
-file_descriptor_t fd[50];
+proc_stack stack[ MAX_PROCS ];  //Array of sub-stacks for process stack
+int readyPcbIndex[ MAX_PROCS ];  //Array of procTab index of available processes
+uint32_t capn = MAX_PROCS;  //capn = currently available process number
+pipe_t pipes[MAX_PIPES];  //Array of pipes
+file_descriptor_t fd[50];  //file descriptors
 
-extern void     main_console();
-extern uint32_t tos_svc;
-extern uint32_t tos_proc;
+extern void     main_console();  //Entry point of console process
+extern uint32_t tos_proc;  //Top of stack of process stack
 
-uint16_t fb[ 600 ][ 800 ];
-uint16_t currentX = 0;
-uint16_t currentY = 0;
-char **char_set;
-uint8_t prev_ps20_id = 0x0;
-bool shift_key = false;
+//QEMU display attributes
+uint16_t fb[ 600 ][ 800 ];  //display colour matrix
+uint16_t currentX = 0;  //current x-coordinate
+uint16_t currentY = 0;  //current y-coordinate
+char **char_set;  //List of character bitmap
+uint8_t prev_ps20_id = 0x0;  //previous PS20 id
+bool shift_key = false;  //shift key boolean switch
 
+//Update capn and index of available processes by checking the status of processes
 void updateCapnAndReadyIndex() {
   int loadedP = 0;
   int j = 0;
@@ -72,6 +73,7 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
+//get index of procTab with pid of the process
 int getIndexOfProcTable(pid_t pid) {
   int result;
   for( int i = 0; i < MAX_PROCS; i++) {
@@ -82,6 +84,7 @@ int getIndexOfProcTable(pid_t pid) {
   }
   return result;
 }
+
 
 void schedule( ctx_t* ctx ) {
   int exec;
@@ -104,8 +107,6 @@ void schedule( ctx_t* ctx ) {
   procTab[ exec ].status = STATUS_READY;
   procTab[ next_exec ].status = STATUS_EXECUTING;
   dispatch( ctx, &procTab[ exec ], &procTab[ next_exec ] );
-  
-
   
   return;
 }
@@ -536,6 +537,11 @@ void hilevel_kill(ctx_t *ctx, int pid, int signal) {
 void hilevel_nice(int pid, int32_t inc) {
   int pidProcTabIndex = getIndexOfProcTable(pid);
   procTab[pidProcTabIndex].priority += inc;
+}
+
+void hilevel_bnice(int pid, int32_t base) {
+  int pidProcTabIndex = getIndexOfProcTable(pid);
+  procTab[pidProcTabIndex].basePrio = base;
 }
 
 void hilevel_pipe(ctx_t *ctx) {
@@ -1149,6 +1155,13 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       hilevel_nice(pid, x);
       PL011_putc( UART0, 'N', true);
       break;
+    }
+
+    case SYS_BNICE : { //0x08 => bnice( pid, x )
+      int pid = (int) ctx->gpr[ 0 ];
+      int32_t x   = (int32_t) ctx->gpr[ 1 ];
+      hilevel_bnice(pid, x);
+      PL011_putc( UART0, 'B', true);
     }
 
     case SYS_PIPE : { //0x08 => pipe( fd )
