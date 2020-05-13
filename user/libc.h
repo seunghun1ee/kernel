@@ -76,6 +76,8 @@ extern void exec( const void* x );
 extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to priority + x
 extern void nice( pid_t pid, int x );
+
+
 // for process identified by pid, set  base-priority to x
 extern void bnice( int pid, int x );
 

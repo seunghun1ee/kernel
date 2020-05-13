@@ -11,7 +11,6 @@
 #include <stdint.h>
 
 #include "libc.h"
-#include "sem.h"
 
 
 typedef struct {

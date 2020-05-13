@@ -148,6 +148,8 @@ void nice( int pid, int x ) {
   return;
 }
 
+//My assembly code
+
 void bnice( int pid, int x ) {
   asm volatile( "mov r0, %1 \n" // assign r0 =  pid
                 "mov r1, %2 \n" // assign r1 =    x
