@@ -85,28 +85,28 @@ int getIndexOfProcTable(pid_t pid) {
   return result;
 }
 
-
+//priority based + ageing scheduler
 void schedule( ctx_t* ctx ) {
   int exec;
   int max_priority = 0;
   int next_exec;
   for(int i = 0; i < capn; i++) {
-    if(readyPcbIndex[i] == getIndexOfProcTable(executing->pid)) {
-      exec = readyPcbIndex[i];
+    if(readyPcbIndex[i] == getIndexOfProcTable(executing->pid)) {  //if the process is currently executing, change priority back to base-priority
+      exec = readyPcbIndex[i];  
       procTab[ readyPcbIndex[i] ].priority = procTab[ readyPcbIndex[i] ].basePrio;
     }
-    else {
+    else {  //otherwise, age the process by incrementing priority field
       procTab[ readyPcbIndex[i] ].priority += 1;
     }
 
-    if(procTab[ readyPcbIndex[i] ].priority > max_priority) {
+    if(procTab[ readyPcbIndex[i] ].priority > max_priority) {  //if the process has max priority among other processes, set this process as next process
       max_priority = procTab[ readyPcbIndex[i] ].priority;
       next_exec = readyPcbIndex[i];
     }
   }
-  procTab[ exec ].status = STATUS_READY;
+  procTab[ exec ].status = STATUS_READY;  //change the status of two affected processes
   procTab[ next_exec ].status = STATUS_EXECUTING;
-  dispatch( ctx, &procTab[ exec ], &procTab[ next_exec ] );
+  dispatch( ctx, &procTab[ exec ], &procTab[ next_exec ] );  //dispatch
   
   return;
 }
@@ -117,7 +117,7 @@ void schedule( ctx_t* ctx ) {
 void initialiseProcTab() {
   for( int i = 0; i < MAX_PROCS; i++ ) {
     procTab[ i ].status = STATUS_INVALID;
-    stack[ i ].taken = false;
+    stack[ i ].taken = false;  //also initialise sub-stacks of process
     stack[ i ].tos = (uint32_t) &tos_proc - (i * STACK_SIZE);
   }
   //initialise console
@@ -139,7 +139,7 @@ void initialiseProcTab() {
   procTab[ 0 ].basePrio = 0;
 }
 
-void initFd() {
+void initFd() {  //initialise file descriptors
   for(int i = 0; i < 3; i++) {
     fd[i].pipeIndex = -1;
     fd[i].taken = true;
@@ -150,7 +150,7 @@ void initFd() {
   }
 }
 
-void initPipes() {
+void initPipes() {  //initialise pipes
   for(int i = 0; i < MAX_PIPES; i++) {
     pipes[i].read_end = -1;
     pipes[i].write_end = -1;
@@ -165,7 +165,7 @@ void initPipes() {
   }
 }
 
-void initDisplay() {
+void initDisplay() {  //initialise display (black background)
   for( int i = 0; i < 600; i++ ) {
     for( int j = 0; j < 800; j++ ) {
       fb[ i ][ j ] = 0x0;
@@ -173,7 +173,7 @@ void initDisplay() {
   }
 }
 
-int findAvaialbeTos() {
+int findAvaialbeTos() {  //get index of available stack
   int result;
   for (int i = 0; i < MAX_PROCS; i++) {
     if( stack[ i ].taken == false) {
@@ -184,12 +184,12 @@ int findAvaialbeTos() {
   return result;
 }
 
-void setStack(int i, pid_t pid) {
+void setStack(int i, pid_t pid) {  //take the stack and notify the pid of the process to the stack
   stack[ i ].taken = true;
   stack[ i ].pid = pid;
 }
 
-int getIndexOfStackByTos(uint32_t tosAddress) {
+int getIndexOfStackByTos(uint32_t tosAddress) { 
   int result;
   for ( int i = 0; i < MAX_PROCS; i++) {
     if( stack[ i ].tos == tosAddress && stack[i].taken) {
@@ -211,7 +211,7 @@ int getIndexOfStackByPid(pid_t pid) {
   return result;
 }
 
-int findAvailableProcTab() {
+int findAvailableProcTab() {  //look for procTab with the status INVALID of TERMINATED and return its index
   int result;
   for( int i = 0; i < MAX_PROCS; i++) {
     if( procTab[ i ].status == STATUS_INVALID || procTab[ i ].status == STATUS_TERMINATED) {
@@ -244,28 +244,30 @@ int findAvailablePipe() {
   return result;
 }
 
-void setProcess(pcb_t pcb, uint32_t pid, status_t status, uint32_t tos, ctx_t context, int priority, int basePriority) {
-  memset( &pcb, 0, sizeof(pcb_t));
-  pcb.pid      = pid;
-  pcb.status   = status;
-  pcb.tos      = tos;
-  pcb.priority = priority;
-  pcb.basePrio = basePriority;
-}
+// void setProcess(pcb_t pcb, uint32_t pid, status_t status, uint32_t tos, ctx_t context, int priority, int basePriority) {
+//   memset( &pcb, 0, sizeof(pcb_t));
+//   pcb.pid      = pid;
+//   pcb.status   = status;
+//   pcb.tos      = tos;
+//   pcb.priority = priority;
+//   pcb.basePrio = basePriority;
+// }
 
-void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
-  pcb.pid = pid;
-  pcb.status = status;
-}
+// void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
+//   pcb.pid = pid;
+//   pcb.status = status;
+// }
 
 //push and pop functions are influenced by the tutorial from
 //https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
 
+//push item to the back of the pipe that index points
+//return 1 on success return -1 when queue is full
 int push(int index, char item) {
   if(item == '\0') {
     return 0;  //null char ignored
   }
-  if(pipes[index].itemCount < pipes[index].length) {
+  if(pipes[index].itemCount < pipes[index].length) {  //push happens only if the queue is not full
     if(pipes[index].itemCount == 0) {
       pipes[index].queue[0] = item;
       
@@ -290,8 +292,10 @@ int push(int index, char item) {
   
 }
 
-char pop(int index) {
-  if(pipes[index].itemCount > 0) {
+//pop item from the front of the pipe
+//return the popped item
+char pop(int index) {  
+  if(pipes[index].itemCount > 0) {  
     char item = pipes[index].queue[pipes[index].front];
     if(item == '\0') {
       return 0; //ignore null char
@@ -305,6 +309,7 @@ char pop(int index) {
   //queue is empty
   return 0;
 }
+
 
 void lineFeed() {
   currentY += 10;
@@ -355,8 +360,9 @@ void updateXY(update_display_op op) {
   
 }
 
+//put character on display[y][x] with the colour
 void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
-  char *bitmap = char_set[character];
+  char *bitmap = char_set[character];  //look for the bitmap of the character
   switch (character) {
     case '\n':
       lineFeed();
@@ -381,27 +387,31 @@ void putChar(uint16_t x, uint16_t y, char character, uint16_t colour) {
   }
 }
 
+//yield calls schedule to run different process with the highest priority
 void hilevel_yield(ctx_t *ctx) {
   updateCapnAndReadyIndex();
   schedule( ctx );
 }
 
+//write looks for fd and write n number of items in x
+//return the number of item that are written
 void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
   int success = 0;
   switch (fdIndex) {
-    case STDIN_FILENO ... STDOUT_FILENO:
+    case STDIN_FILENO:
+    case STDOUT_FILENO:  //case for standard io
       for(int i = 0; i < n; i++ ) {
         char a = *x;
-        if(a >= 'a' && a <= 'z') {
+        if(a >= 'a' && a <= 'z') { //for the display, convert lower-case letter to captial letter as there's no lower-case bitmap
           a -= 32;
         }
-        putChar(currentX, currentY, a, 0x7FFF);
-        PL011_putc( UART1, *x++, true );
+        putChar(currentX, currentY, a, 0x7FFF);  //draw the char at display
+        PL011_putc( UART1, *x++, true );  //put the char at console
         success++;
       }
       break;
 
-    case STDERR_FILENO:
+    case STDERR_FILENO:  //case for standard error
       PL011_putc( UART1, '[', true );
       PL011_putc( UART1, 'E', true );
       PL011_putc( UART1, 'R', true );
@@ -415,8 +425,8 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
       }
       break;
 
-    default:
-      if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
+    default:  //case for other file descriptors
+      if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {  //check if the fd is pointing at the write end of the pipe
         for(int i = 0; i < n; i++ ) {
           int push_err = push(fd[fdIndex].pipeIndex, x[i]);
           if(push_err > 0) {  //on success
@@ -431,17 +441,20 @@ void hilevel_write(ctx_t *ctx, int fdIndex, char *x, int n) {
   ctx->gpr[ 0 ] = success;
 }
 
+//read looks for fd and read n number of items from x 
+//return number of items that are read
 void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
   int success = 0;
   switch (fdIndex) {
-    case STDIN_FILENO ... STDOUT_FILENO:
+    case STDIN_FILENO:
+    case STDOUT_FILENO:  //case for standard io
       for( int i = 0; i < n; i++ ) {
-        *x++ = PL011_getc(UART1, true);
+        *x++ = PL011_getc(UART1, true);  //put char at the console
         success++;
       }
       break;
 
-    case STDERR_FILENO:
+    case STDERR_FILENO:  //case for standard error
       PL011_putc( UART1, '[', true );
       PL011_putc( UART1, 'E', true );
       PL011_putc( UART1, 'R', true );
@@ -455,8 +468,8 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
       }
       break;
 
-    default:
-      if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
+    default:  //case for other file descriptors
+      if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {  //check if the fd is pointing at the read end of the pipe
         for( int i = 0; i < n; i++ ) {
           char pop_err = x[i] = pop(fd[fdIndex].pipeIndex);
           if(pop_err > 0) {  //on success
@@ -472,126 +485,146 @@ void hilevel_read(ctx_t *ctx, int fdIndex, char *x, int n) {
   ctx->gpr[ 0 ] = success;
 }
 
+//fork looks for available procTab and stack then copy current process to the procTab and the stack
+//returns 0 for child process and return pid of child process for parent process 
 void hilevel_fork(ctx_t *ctx) {
+  //find pid
   pid_t parentPid = getIndexOfProcTable(executing->pid);
   pid_t childPid = findAvailableProcTab();
   procTab[childPid].pid = childPid;
   
+  //find procTab index
   int parentProcTabIndex = getIndexOfProcTable(parentPid);
   int childProcTabIndex = childPid;
 
+  //find stack index
   int parentStackIndex = getIndexOfStackByPid(parentPid);
   int childStackIndex = findAvaialbeTos();
 
 
   setStack(childStackIndex, childPid);
-  memset(&procTab[childProcTabIndex], 0, sizeof(pcb_t));
+  memset(&procTab[childProcTabIndex], 0, sizeof(pcb_t));  //set memeory for new pcb
+  //clone parent to child
   procTab[childProcTabIndex].pid = childPid;
   procTab[childProcTabIndex].status = STATUS_READY;
   procTab[childProcTabIndex].priority = procTab[parentProcTabIndex].priority;
   procTab[childProcTabIndex].basePrio = procTab[parentProcTabIndex].basePrio;
-  procTab[childProcTabIndex].parent = parentPid;
+  procTab[childProcTabIndex].parent = parentPid;  //pid of parent
   procTab[childProcTabIndex].tos = (uint32_t) stack[childStackIndex].tos;
-
+  //memory copy the parent stack to child stack
   memcpy((void *) stack[ childStackIndex ].tos - STACK_SIZE, (const void *) stack[ parentStackIndex ].tos - STACK_SIZE, STACK_SIZE);
+  //memory copy the current context to child context
   memcpy((void *) &procTab[ childProcTabIndex ].ctx, (const void *) ctx, sizeof(ctx_t));
 
   
-  uint32_t sp_offset = (uint32_t) procTab[ parentProcTabIndex ].tos - ctx->sp;
-  procTab[ childProcTabIndex ].ctx.sp = (uint32_t) procTab[childProcTabIndex].tos - sp_offset;
-  ctx->gpr[ 0 ] = childPid;
-  procTab[ childProcTabIndex ].ctx.gpr[ 0 ] = 0;
+  uint32_t sp_offset = (uint32_t) procTab[ parentProcTabIndex ].tos - ctx->sp;  //calculate the off-set of current sp from current top of stack
+  procTab[ childProcTabIndex ].ctx.sp = (uint32_t) procTab[childProcTabIndex].tos - sp_offset;  //set the off-set to the sp of child process
+  ctx->gpr[ 0 ] = childPid; //return pid of child process for parent process
+  procTab[ childProcTabIndex ].ctx.gpr[ 0 ] = 0;  //return 0 for child process
   
-  //
 }
 
+//exit terminates the current process and return exit_status to the parent process
 void hilevel_exit(ctx_t *ctx, int exit_status) {
-  pid_t currentPid = executing->pid;
+  pid_t currentPid = executing->pid;  //find current pid
+  //find current procTab and stack index
   int currentProcTabIndex = getIndexOfProcTable(currentPid);
   int currentStackIndex = getIndexOfStackByPid(currentPid);
+  //find parent procTabIndex
   int parentProcTabIndex = getIndexOfProcTable(procTab[currentProcTabIndex].parent);
-  if(exit_status == EXIT_SUCCESS) {
-    procTab[ currentProcTabIndex ].status = STATUS_TERMINATED;
-    stack[ currentStackIndex ].taken = false;
-    updateCapnAndReadyIndex();
-    schedule(ctx);
-  }
+  
+  procTab[ currentProcTabIndex ].status = STATUS_TERMINATED;  //change the status of current proccess to TERMINATED
+  procTab[ parentProcTabIndex ].ctx.gpr[ 0 ] = exit_status;  //return exit_status to parent process
+  stack[ currentStackIndex ].taken = false;  //de-allocate the stack
+  updateCapnAndReadyIndex();
+  schedule(ctx);  //call scheduler
 }
 
+//exec replaces the pc of current process to the entry point of the program and resets the sp
 void hilevel_exec(ctx_t *ctx, void* program) {
   ctx->pc = (uint32_t) program;
   ctx->sp = executing->tos;
 }
 
+//kill terminates the process specified by pid
 void hilevel_kill(ctx_t *ctx, int pid, int signal) {
   uint32_t sys_signal = signal & 0xFF;
+  //find index of procTab and stack
   int procTabIndex = getIndexOfProcTable((pid_t) pid);
   int stackIndex = getIndexOfStackByPid((pid_t) pid);
-  int parentProcTabIndex = getIndexOfProcTable(procTab[procTabIndex].parent);
-  procTab[ procTabIndex ].status = STATUS_TERMINATED;
-  stack[ stackIndex ].taken = false;
+  procTab[ procTabIndex ].status = STATUS_TERMINATED;  //change the status of current proccess to TERMINATED
+  stack[ stackIndex ].taken = false;  //de-allocate the stack
   updateCapnAndReadyIndex();
-  schedule(ctx);
+  schedule(ctx);  //call scheduler
 }
 
+//nice adds inc to the priority of the process specified by pid
 void hilevel_nice(int pid, int32_t inc) {
-  int pidProcTabIndex = getIndexOfProcTable(pid);
-  procTab[pidProcTabIndex].priority += inc;
+  int pidProcTabIndex = getIndexOfProcTable(pid);  //find procTab index for the pid
+  procTab[pidProcTabIndex].priority += inc;  //add inc to priority
 }
 
+//bnice change the base-priority of the process specified by pid to base
 void hilevel_bnice(int pid, int32_t base) {
-  int pidProcTabIndex = getIndexOfProcTable(pid);
-  procTab[pidProcTabIndex].basePrio = base;
+  int pidProcTabIndex = getIndexOfProcTable(pid);  //find procTab index for the pid
+  procTab[pidProcTabIndex].basePrio = base;  //change base-priority
 }
 
+//pipe looks for two available file descriptors and one pipe and allocate the fd to each end of the pipe
+//return 0 on success, -1 on failure
 void hilevel_pipe(ctx_t *ctx) {
-  int readIndex = findAvailableFd();
+  int readIndex = findAvailableFd();  //find fd index
   if(readIndex < 0) {
-    ctx->gpr[ 3 ] = -1;  //no avilable fd
+    ctx->gpr[ 3 ] = -1;  //no avilable fd, return -1
     return;
   }
-  fd[readIndex].taken = true;
+  fd[readIndex].taken = true;  //allocate fd
   
-  int writeIndex = findAvailableFd();
+  int writeIndex = findAvailableFd();  //find fd index
   if(writeIndex < 0) {
-    ctx->gpr[ 3 ] = -1;  //no available fd
+    ctx->gpr[ 3 ] = -1;  //no available fd, return -1
     return;
   }
-  fd[writeIndex].taken = true;
+  fd[writeIndex].taken = true;  //allocate fd
   
-  int pipeIndex = findAvailablePipe();
+  int pipeIndex = findAvailablePipe();  //find pipe index
   if(pipeIndex < 0) {
-    ctx->gpr[ 3 ] = -1;  //no available pipe
+    ctx->gpr[ 3 ] = -1;  //no available pipe, return -1
     return;
   }
 
+  //set read-end and write-end
   pipes[pipeIndex].read_end = readIndex;
   pipes[pipeIndex].write_end = writeIndex;
-  pipes[pipeIndex].taken = true;
+  pipes[pipeIndex].taken = true;  //make the pipe active
 
+  //allocate pipe index
   fd[readIndex].pipeIndex = pipeIndex;
   fd[writeIndex].pipeIndex = pipeIndex;
   
-  ctx->gpr[ 3 ] = 0;
-  ctx->gpr[ 1 ] = readIndex;
-  ctx->gpr[ 2 ] = writeIndex;
+  ctx->gpr[ 3 ] = 0;  //pipe success, return 0
+  ctx->gpr[ 1 ] = readIndex;  //set fd[0] = readIndex
+  ctx->gpr[ 2 ] = writeIndex;  //set fd[1] = writeIndex
 }
 
+//close de-allocates the file descriptor of fdIndex
+//if both ends of pipe fd is closed, the pipe is also freed
+//return 0 on success, -1 on failure
 void hilevel_close(ctx_t *ctx, int fdIndex) {
   if(!fd[fdIndex].taken) {
     //error it's not opened before
     ctx->gpr[ 3 ] = -1;
     return;
   }
-  if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) {
-    pipes[fd[fdIndex].pipeIndex].read_end = -1;
+  if(fdIndex == pipes[fd[fdIndex].pipeIndex].read_end) { //if this fd is read-end
+    pipes[fd[fdIndex].pipeIndex].read_end = -1;  //close read-end
   }
-  else if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) {
-    pipes[fd[fdIndex].pipeIndex].write_end = -1;
+  else if(fdIndex == pipes[fd[fdIndex].pipeIndex].write_end) { //if this fd is write-end
+    pipes[fd[fdIndex].pipeIndex].write_end = -1;  //close write-end
   }
   else {
     //error wrong file descriptor
-    ctx->gpr[ 3 ] = -1;
+    ctx->gpr[ 3 ] = -1;  //close failed
     return;
   }
 
@@ -600,11 +633,12 @@ void hilevel_close(ctx_t *ctx, int fdIndex) {
   }
 
   fd[fdIndex].pipeIndex = -1;
-  fd[fdIndex].taken = false;
+  fd[fdIndex].taken = false;  //free the file descriptor
 
-  ctx->gpr[ 3 ] = 0;
+  ctx->gpr[ 3 ] = 0;  //close succeeded
 }
 
+//default beaviour on PS20 keyboard input
 void keyboard_behaviour_0(uint8_t id) {
   switch (id) {
     case 0x29:
@@ -959,8 +993,6 @@ void hilevel_handler_rst(ctx_t* ctx) {
 
   int_enable_irq();
 
-  // Write example red/green/blue test pattern into the frame buffer.
-
   initDisplay();
 
   char_set['\0'] = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1043,21 +1075,21 @@ void hilevel_handler_rst(ctx_t* ctx) {
 }
 
 void hilevel_handler_irq(ctx_t* ctx) {
-  // Step 2: read  the interrupt identifier so we know the source.
+  // Step 1: read  the interrupt identifier so we know the source.
 
   uint32_t id = GICC0->IAR;
 
-  // Step 4: handle the interrupt, then clear (or reset) the source.
+  // Step 2: handle the interrupt, then clear (or reset) the source.
 
-  if( id == GIC_SOURCE_TIMER0 ) {
+  if( id == GIC_SOURCE_TIMER0 ) {  //Timer
     updateCapnAndReadyIndex();
     PL011_putc( UART0, 'T', true ); TIMER0->Timer1IntClr = 0x01;
     schedule( ctx );
   }
-  else if( id == GIC_SOURCE_UART1 ) {
+  else if( id == GIC_SOURCE_UART1 ) {  //UART1 (console)
     UART1->ICR = 0x10;
   }
-  else if     ( id == GIC_SOURCE_PS20 ) {
+  else if     ( id == GIC_SOURCE_PS20 ) {  //PS20 keyboard
     
     uint8_t x = PL050_getc( PS20 );
 
@@ -1073,7 +1105,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
     prev_ps20_id = x;
     
   }
-  else if( id == GIC_SOURCE_PS21 ) {
+  else if( id == GIC_SOURCE_PS21 ) {  //PS21 mouse
     uint8_t x = PL050_getc( PS21 );
 
     PL011_putc( UART0, '1',                      true );  
@@ -1083,7 +1115,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
     PL011_putc( UART0, '>',                      true ); 
   }
   
-  // Step 5: write the interrupt identifier to signal we're done.
+  // Step 3: write the interrupt identifier to signal we're done.
 
   GICC0->EOIR = id;
 
