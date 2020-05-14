@@ -34,7 +34,8 @@ it's clear what's your work and what isn't:
 [ I used example codes in the lecture slide for my sem_wait and sem_post.
   I checked tutorial code from https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
   to implement pipe
-  All codes except the ones from lab sessions are my work ]
+  All codes except the ones from lab sessions are my work 
+  document.txt has detailed list of my work ]
 
 -------------------------------------------------------------------------------
 
@@ -77,6 +78,6 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[...]
+[ Please read document.txt ]
 
 -------------------------------------------------------------------------------

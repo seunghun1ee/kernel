@@ -244,20 +244,6 @@ int findAvailablePipe() {
   return result;
 }
 
-// void setProcess(pcb_t pcb, uint32_t pid, status_t status, uint32_t tos, ctx_t context, int priority, int basePriority) {
-//   memset( &pcb, 0, sizeof(pcb_t));
-//   pcb.pid      = pid;
-//   pcb.status   = status;
-//   pcb.tos      = tos;
-//   pcb.priority = priority;
-//   pcb.basePrio = basePriority;
-// }
-
-// void initEmptyPcb(pcb_t pcb, uint32_t pid, status_t status) {
-//   pcb.pid = pid;
-//   pcb.status = status;
-// }
-
 //push and pop functions are influenced by the tutorial from
 //https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
 

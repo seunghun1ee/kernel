@@ -1,0 +1,117 @@
+<1> List of my work
+    
+    1. kernel/hilevel.c
+        global variables {
+            proc_stack stack[ MAX_PROCS ]
+            int readyPcbIndex[ MAX_PROCS ]
+            uint32_t capn = MAX_PROCS
+            pipe_t pipes[MAX_PIPES]
+            file_descriptor_t fd[50]
+
+            extern void     main_console()
+            extern uint32_t tos_proc
+
+            uint16_t fb[ 600 ][ 800 ]
+            uint16_t currentX = 0
+            uint16_t currentY = 0
+            char **char_set
+            uint8_t prev_ps20_id = 0x0
+            bool shift_key = false
+        }
+        functions {
+            updateCapnAndReadyIndex()
+            schedule()
+
+            initialiseProcTab()
+            initFd()
+            initPipes()
+            initDisplay()
+
+            setStack()
+            getIndexOfProcTable()
+            getIndexOfStackByTos()
+            getIndexOfStackByPid()
+
+            findAvailableProcTab()
+            findAvaialbeTos()
+            findAvailableFd()
+            findAvailablePipe()
+
+            lineFeed()
+            backspace()
+            updateXY()
+            putChar()
+
+            hilevel_yield()
+            hilevel_write()
+            hilevel_read()
+            hilevel_fork()
+            hilevel_exit()
+            hilevel_exec()
+            hilevel_kill()
+            hilevel_nice()
+            hilevel_bnice()
+            hilevel_pipe()
+            hilevel_close()
+
+            keyboard_behaviour_0()
+            
+            
+            *These three functions are modified from COMS20001 labsheet 3, 4 and 6 
+            hilevel_handler_rst()
+            hilevel_handler_irq()
+            hilevel_handler_svc()
+
+            *These two functions are influenced from https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
+            push()
+            pop()
+        }
+
+    2. kernel/hilevel.h
+        constants {
+            STACK_SIZE = 0x00001000
+            MAX_PIPES = 20
+            QUEUE_LEN = 1000
+        }
+        type definitions {
+            proc_stack
+            pipe_t
+            file_descriptor_t
+            update_display_op
+        }
+
+    3. user/console.c
+        No significant changes but
+            1. adding variable "extern void main_dining();"
+            2. adding if condition "else if( 0 == strcmp( x, "dining" ) ) { return &main_dining; }"
+            3. puts( "console$ ", 7 ); -> puts( "console$ ", 9 );
+        were done
+    
+    4. user/dining.c
+        All contents
+    
+    5. user/dining.h
+        All contents
+    
+    6. user/libc.c
+        functions {
+            bnice()
+            pipe()
+            close()
+        }
+    
+    7. user/libc.h
+        constants {
+            SYS_BNICE = 0x08
+            SYS_PIPE = 0x09
+            SYS_CLOSE = 0x0A
+        }
+    
+    8. image.ld
+        Allocated new stack for processes above top of svc stack
+
+    9. Every .pbm files in bitmap directory
+
+Everything else are from COMS20001 labsheet 4
+
+<2> 
