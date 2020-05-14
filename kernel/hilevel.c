@@ -296,12 +296,12 @@ char pop(int index) {
   return 0;
 }
 
-
 void lineFeed() {
   if(currentY + 10 <= 590) {
     currentY += 10;
   }
   else {
+    initDisplay();  //when the y coordinate reaches bottom, clear display
     currentY = 0;
   }
   currentX = 0;
