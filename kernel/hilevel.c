@@ -306,7 +306,12 @@ char pop(int index) {
 }
 
 void lineFeed() {
-  currentY += 10;
+  if(currentY + 10 <= 590) {
+    currentY += 10;
+  }
+  else {
+    currentY = 0;
+  }
   currentX = 0;
 }
 
