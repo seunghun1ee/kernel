@@ -218,4 +218,4 @@ Everything else are from COMS20001 labsheet 4
     
     4.  Design graphics for Dining Philosophers program
 
-        This will make user to see which chopsticks are picked or dropped
+        This will make user to see which chopsticks are picked or dropped easily
