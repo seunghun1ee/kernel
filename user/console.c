@@ -55,15 +55,6 @@ void* load( char* x ) {
   else if( 0 == strcmp( x, "dining" ) ) {
     return &main_dining;
   }
-  else if( 0 == strcmp( x, "semtest" ) ) {
-    return &main_semtest;
-  }
-  else if( 0 == strcmp( x, "pipetest" ) ) {
-    return &main_pipetest;
-  }
-  else if( 0 == strcmp( x, "displaytest" ) ) {
-    return &main_displaytest;
-  }
 
   return NULL;
 }
