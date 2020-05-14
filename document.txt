@@ -114,7 +114,24 @@
 
 Everything else are from COMS20001 labsheet 4
 
-<2> How they work
+<2> How to start
+
+    Open three terminal at the root of the directory
+    For one terminal, launch QEMU with the command
+        make launch-qemu
+    For another terminal, connect to the console with the command
+        nc 127.0.0.1 1235
+    For the third terminal, launch gdb with the command
+        make launch-gdb
+    
+    type "continue" in gdb to start the kernel
+
+    The kernel has 4 programs P3, P4, P5 and dining
+
+    To execute dining Philosophers, you need to write command in console
+        execute dining
+
+<3> How they work
 
     On reset interrupt request, lolevel_handler_rst is called and it calls hilevel_handler_rst()
 
@@ -152,10 +169,11 @@ Everything else are from COMS20001 labsheet 4
         3. Looks for the process with the highest priority and picks that as next_exec process
         4. Call dispatch() to execute next process
 
+    For the detailed descriptions, please check the comments in functions
 
     (*) Not implemented yet
 
-<3> How the display works
+<4> How the display works
     
     global variable fb in hilevel.c represents 800 x 600 colour matrix
     on initDisplay(), it fills all elements in matrix with black background colour
@@ -168,7 +186,7 @@ Everything else are from COMS20001 labsheet 4
 
     That's all for now
 
-<4> Future plan on extension
+<5> Future plan on extension
 
     Due to COVID-19, the coursework was disrupted and the extension was unfortunatly not enough to finish the stage 3
     In current stage, the display function is primtive and does not provide better user experience compared to console from UART1
@@ -178,13 +196,17 @@ Everything else are from COMS20001 labsheet 4
 
         On hilevel_write, send char to PS20->DATA by using PL050_putc
         Write console2.c based on console.c to get command from the display
-        Instead of using PL011_getc(), use PL050_getc to get command character data from PS20->DATA register
+        Create buffer for the input from display in hilevel.c
+        Instead of using PL011_getc(), read from the buffer to get command character data
         This will make users interact with the system just from display
     
     2.  Use cursor related registers in PL111, to implement PS/2 mouse interaction
 
-        Create cursor image in .pbm format to get the cursor bitmap and store that in PL111->ClcdCrsrImage register
-        ...
+        Create 32x32 cursor images and store that in PL111->ClcdCrsrImage register in LBBP format as the PL111 manual specifies
+        Use PL111->ClcdCrsrCtrl register to control the image of cursor and enable/disable displaying the cursor
+        On PS/2 mouse input, request interrupt by using PL111->ClcdCrsrIMSC register
+        Get PS/2 mouse input from PS21->DATA and perform mouse position update by changing value of PL111->ClcdCrsrXY register
+        Clear interrupt at register PL111->ClcdCrsrICR
         This will make users have mouse interaction with the system
 
     3.  Design GUI
@@ -193,3 +215,7 @@ Everything else are from COMS20001 labsheet 4
         Such as, icon for Dining Philosophers program, notepad program, etc.
         Plus, better designed terminal
         This will make user to execute programs just from mouse clicking
+    
+    4.  Design graphics for Dining Philosophers program
+
+        This will make user to see which chopsticks are picked or dropped
