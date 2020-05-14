@@ -297,7 +297,7 @@ char pop(int index) {
 }
 
 void lineFeed() {
-  if(currentY + 10 <= 590) {
+  if(currentY <= 580) {
     currentY += 10;
   }
   else {

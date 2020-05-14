@@ -88,10 +88,10 @@
         were done
     
     4. user/dining.c
-        All contents
+        All codes
     
     5. user/dining.h
-        All contents
+        All codes
     
     6. user/libc.c
         functions {
@@ -114,4 +114,48 @@
 
 Everything else are from COMS20001 labsheet 4
 
-<2> 
+<2> How they work
+
+    On reset interrupt request, lolevel_handler_rst is called and it calls hilevel_handler_rst()
+
+    In hilevel_handler_rst(),
+        1. PCBs, process-stack, file_descriptors and pipes are initialised
+        2. After PCBs are initialised, execute 0-th process which is the console
+        3. PL011, PL050, PL111, SP804 and GIC interrupts are configured
+        4. Enable IRQ interrupt
+        5. initialise the display and load 8x8 bitmap character set
+    
+    In main_console(), console use gets() to get string command and tokenise them
+    Then it executes the command
+    On program execution, console calls fork() to clone current process then calls exec()
+    On process termination, console calls kill() to the process specified by pid
+
+    libc functions yield(), write(), read(), fork(), exit(), exec(), kill(), nice(), bnice(), pipe(), close()
+    make system call in SVC mode with its system call identifier
+
+    The SVC mode system call triggers lolevel_handler_svc and it calls hilevel_handler_svc()
+    Based on identifier, it performs hilevel kernel side functions for libc functions
+
+    On every interrupt request, lolevel_handler_irq is triggered and it calls hilevel_handler_irq()
+
+    In hilevel_handler_irq(), it handles the interrupt depends on the source of the request
+        source: / action:
+        TIMER   / calls schedule()
+        UART1   / handles console input/output
+        PS20    / handles PS/2 keyboard input
+        PS21    / handles PS/2 mouse input (*)
+    
+    The schedule() is priority based + ageing process scheduler
+    In schedule(),
+        1. The scheduler resets the priority of current process to base-priority
+        2. Increments priority of every processes that is in STATUS_READY
+        3. Looks for the process with the highest priority and picks that as next_exec process
+        4. Call dispatch() to execute next process
+
+
+    (*) Not implemented yet
+
+<3> How the display works
+
+
+<4> Future plan on extension
