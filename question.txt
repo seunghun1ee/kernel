@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [ 200 ] hours
+effort : [ 200+ ] hours
 
 -------------------------------------------------------------------------------
 
@@ -33,7 +33,9 @@ it's clear what's your work and what isn't:
 
 [ I used example codes in the lecture slide for my sem_wait and sem_post.
   I checked tutorial code from https://www.codesdope.com/blog/article/making-a-queue-using-an-array-in-c/
-  to implement pipe ]
+  to implement pipe
+  All codes except the ones from lab sessions are my work 
+  document.txt has detailed list of my work ]
 
 -------------------------------------------------------------------------------
 
@@ -59,7 +61,7 @@ are not (necessarily) detailed explicitly.
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
                 *OR*
-[?]           - LCD screen and PS/2 device drivers and GUI
+[*]           - LCD screen and PS/2 device drivers and GUI
                 *OR*
 [?]           - file system based on simplified, emulated disk
                 *OR*
@@ -76,6 +78,6 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[...]
+[ Please read document.txt ]
 
 -------------------------------------------------------------------------------

@@ -21,7 +21,11 @@
 #include   "GIC.h"
 #include "PL011.h"
 #include "SP804.h"
+#include "PL050.h"
+#include "PL111.h"
+#include   "SYS.h"
 #include "console.h"
+
 
 // Include functionality relating to the   kernel.
 
@@ -82,20 +86,25 @@ typedef struct {
 } proc_stack;
 
 typedef struct {
-    int read_end;
-    int write_end;
-    char queue[ QUEUE_LEN ];
-    int front;
-    int back;
-    int length;
-    int itemCount;
-    bool taken;
+    int read_end;  //read end fd
+    int write_end;  //write end fd
+    char queue[ QUEUE_LEN ];  //Array of char used as queue
+    int front;  //index of front of the queue
+    int back;  //index of back of the queue
+    int length;  //length of the queue (MAX = QUEUE_LEN)
+    int itemCount;  //number of item in the queue
+    bool taken;  //boolean field for checking if the pipe is taken
 } pipe_t;
 
 typedef struct {
-    int pipeIndex;
-    bool taken;
+    int pipeIndex;  //index of pipe
+    bool taken;  //boolean field for checking if the fd is taken
 } file_descriptor_t;
+
+typedef enum {  //update display status enum
+  OP_ADD,
+  OP_SUB
+} update_display_op;
 
 
 #endif

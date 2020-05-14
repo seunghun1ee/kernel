@@ -11,34 +11,21 @@
 #include <stdint.h>
 
 #include "libc.h"
-#include "sem.h"
-
 
 
 typedef struct {
-    int state;
-    uint32_t left_address;
-    uint32_t right_address;
+    int index;  //index of philosopher
+    int state;  //state of philosopher
+    int left_read;  //fd of read-end of left pipe (chopstick)
+    int left_write;  //fd of write-end of left pipe (chopstick)
+    int right_read;  //fd of read-end of right pipe (chopstick)
+    int right_write;  //fd of write-end of right pipe (chopstick)
 } philosopher_t;
 
-typedef struct {
-    int index;
-    int state;
-    int left_read;
-    int left_write;
-    int right_read;
-    int right_write;
-} philosopher2_t;
 
 typedef struct {
-    uint32_t mutex_address;
-    bool left;
-    bool right;
-} spoon_t;
-
-typedef struct {
-    bool left;
-    bool right;
+    bool left;  //boolean field to check if this chopstick is taken as left chopstick
+    bool right; //boolean field to check if this chopstick is taken as right chopstick
 } chopstick_t;
 
 

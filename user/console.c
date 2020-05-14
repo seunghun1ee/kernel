@@ -37,10 +37,7 @@ void gets( char* x, int n ) {
 extern void main_P3(); 
 extern void main_P4(); 
 extern void main_P5();
-extern void main_dining_sem();
-extern void main_dining_pipe();
-extern void main_semtest();
-extern void main_pipetest(); 
+extern void main_dining();  //entry point of dining philosopher program
 
 void* load( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
@@ -52,17 +49,8 @@ void* load( char* x ) {
   else if( 0 == strcmp( x, "P5" ) ) {
     return &main_P5;
   }
-  else if( 0 == strcmp( x, "dining_sem" ) ) {
-    return &main_dining_sem;
-  }
-  else if( 0 == strcmp( x, "dining_pipe" ) ) {
-    return &main_dining_pipe;
-  }
-  else if( 0 == strcmp( x, "semtest" ) ) {
-    return &main_semtest;
-  }
-  else if( 0 == strcmp( x, "pipetest" ) ) {
-    return &main_pipetest;
+  else if( 0 == strcmp( x, "dining" ) ) {
+    return &main_dining;
   }
 
   return NULL;
