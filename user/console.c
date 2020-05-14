@@ -38,9 +38,6 @@ extern void main_P3();
 extern void main_P4(); 
 extern void main_P5();
 extern void main_dining();
-extern void main_semtest();
-extern void main_pipetest();
-extern void main_displaytest();
 
 void* load( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
