@@ -112,11 +112,11 @@
 
     9. Every .pbm files in bitmap directory
 
-Everything else are from COMS20001 labsheet 4
+Everything else is from COMS20001 lab sheet 3, 4 and 6
 
 <2> How to start
 
-    Open three terminal at the root of the directory
+    Open three terminals at the root of the directory
     For one terminal, launch QEMU with the command
         make launch-qemu
     For another terminal, connect to the console with the command
@@ -137,7 +137,7 @@ Everything else are from COMS20001 labsheet 4
 
     In hilevel_handler_rst(),
         1. PCBs, process-stack, file_descriptors and pipes are initialised
-        2. After PCBs are initialised, execute 0-th process which is the console
+        2. After PCBs are initialised, execute the 0-th process which is the console
         3. PL011, PL050, PL111, SP804 and GIC interrupts are configured
         4. Enable IRQ interrupt
         5. initialise the display and load 8x8 bitmap character set
@@ -151,7 +151,7 @@ Everything else are from COMS20001 labsheet 4
     make system call in SVC mode with its system call identifier
 
     The SVC mode system call triggers lolevel_handler_svc and it calls hilevel_handler_svc()
-    Based on identifier, it performs hilevel kernel side functions for libc functions
+    Based on the identifier, it performs hi-level kernel side functions for libc functions
 
     On every interrupt request, lolevel_handler_irq is triggered and it calls hilevel_handler_irq()
 
@@ -162,10 +162,10 @@ Everything else are from COMS20001 labsheet 4
         PS20    /  handles PS/2 keyboard input
         PS21    /  handles PS/2 mouse input (*)
     
-    The schedule() is priority based + ageing process scheduler
+    The schedule() is priority-based + ageing process scheduler
     In schedule(),
-        1. The scheduler resets the priority of current process to base-priority
-        2. Increments priority of every processes that is in STATUS_READY
+        1. The scheduler resets the priority of the current process to base-priority
+        2. Increments priority of every process that is in STATUS_READY
         3. Looks for the process with the highest priority and picks that as next_exec process
         4. Call dispatch() to execute next process
 
@@ -176,7 +176,7 @@ Everything else are from COMS20001 labsheet 4
 <4> How the display works
     
     global variable fb in hilevel.c represents 800 x 600 colour matrix
-    on initDisplay(), it fills all elements in matrix with black background colour
+    on initDisplay(), it fills all elements in the matrix with black background colour
     On keyboard input, it calls putChar() to display the character of the input at the current coordinates
     putChar() looks for the bitmap of the character from char_set and updates 8x8 grid from the current coordinates
     
@@ -188,34 +188,34 @@ Everything else are from COMS20001 labsheet 4
 
 <5> Future plan on extension
 
-    Due to COVID-19, the coursework was disrupted and the extension was unfortunatly not enough to finish the stage 3
-    In current stage, the display function is primtive and does not provide better user experience compared to console from UART1
+    Due to COVID-19, the coursework was disrupted and the extension was unfortunately not enough to finish the stage 3
+    In the current stage, the display function is primitive and does not provide better user experience compared to console from UART1
     My plans to improve this are
     
     1.  Make the PL111 display to have console functionality
 
         On hilevel_write, send char to PS20->DATA by using PL050_putc
         Write console2.c based on console.c to get command from the display
-        Create buffer for the input from display in hilevel.c
+        Create a buffer for the input from display in hilevel.c
         Instead of using PL011_getc(), read from the buffer to get command character data
-        This will make users interact with the system just from display
+        This will make users interact with the system just from the display
     
     2.  Use cursor related registers in PL111, to implement PS/2 mouse interaction
 
         Create 32x32 cursor images and store that in PL111->ClcdCrsrImage register in LBBP format as the PL111 manual specifies
-        Use PL111->ClcdCrsrCtrl register to control the image of cursor and enable/disable displaying the cursor
+        Use PL111->ClcdCrsrCtrl register to control the image of the cursor and enable/disable displaying the cursor
         On PS/2 mouse input, request interrupt by using PL111->ClcdCrsrIMSC register
-        Get PS/2 mouse input from PS21->DATA and perform mouse position update by changing value of PL111->ClcdCrsrXY register
+        Get PS/2 mouse input from PS21->DATA and perform mouse position update by changing the value of PL111->ClcdCrsrXY register
         Clear interrupt at register PL111->ClcdCrsrICR
         This will make users have mouse interaction with the system
 
     3.  Design GUI
 
         Write some graphics displaying functions in hilevel.c
-        Such as, icon for Dining Philosophers program, notepad program, etc.
-        Plus, better designed terminal
-        This will make user to execute programs just from mouse clicking
+        Such as icons for Dining Philosophers program, notepad program, etc.
+        Plus, better-designed terminal
+        This will make users execute programs just from mouse clicking
     
-    4.  Design graphics for Dining Philosophers program
+    4.  Design graphics for the Dining Philosophers program
 
-        This will make user to see which chopsticks are picked or dropped easily
+        This will make users see which chopsticks are picked or dropped easily
