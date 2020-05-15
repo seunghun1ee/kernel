@@ -128,7 +128,7 @@ Everything else is from COMS20001 lab sheet 3, 4 and 6
 
     The kernel has 4 programs P3, P4, P5 and dining
 
-    To execute dining Philosophers, you need to write command in console
+    To execute dining Philosophers, you need to write command in the console
         execute dining
 
 <3> How they work
