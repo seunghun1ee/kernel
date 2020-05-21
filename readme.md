@@ -1,4 +1,4 @@
-<1> List of my work
+## 1. List of my work
     
     1. kernel/hilevel.c
         global variables {
@@ -112,9 +112,9 @@
 
     9. Every .pbm files in bitmap directory
 
-Everything else is from COMS20001 lab sheet 3, 4 and 6
+    Everything else is from COMS20001 lab sheet 3, 4 and 6
 
-<2> How to start
+## 2. How to start
 
     Open three terminals at the root of the directory
     For one terminal, launch QEMU with the command
@@ -131,7 +131,7 @@ Everything else is from COMS20001 lab sheet 3, 4 and 6
     To execute dining Philosophers, you need to write command in console
         execute dining
 
-<3> How they work
+## 3. How they work
 
     On reset interrupt request, lolevel_handler_rst is called and it calls hilevel_handler_rst()
 
@@ -173,7 +173,7 @@ Everything else is from COMS20001 lab sheet 3, 4 and 6
 
     (*) Not implemented yet
 
-<4> How the display works
+## 4. How the display works
     
     global variable fb in hilevel.c represents 800 x 600 colour matrix
     on initDisplay(), it fills all elements in the matrix with black background colour
